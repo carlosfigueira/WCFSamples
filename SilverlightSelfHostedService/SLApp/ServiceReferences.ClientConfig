@@ -1,0 +1,17 @@
+﻿<configuration>
+    <system.serviceModel>
+        <bindings>
+            <basicHttpBinding>
+                <binding name="BasicHttpBinding_ITest" maxBufferSize="2147483647"
+                    maxReceivedMessageSize="2147483647">
+                    <security mode="None" />
+                </binding>
+            </basicHttpBinding>
+        </bindings>
+        <client>
+            <endpoint address="http://localhost:8000/basic" binding="basicHttpBinding"
+                bindingConfiguration="BasicHttpBinding_ITest" contract="ServiceReference1.ITest"
+                name="BasicHttpBinding_ITest" />
+        </client>
+    </system.serviceModel>
+</configuration>
