@@ -1,0 +1,1 @@
+﻿<%@ ServiceHost Language="C#" Debug="true" Service="ParameterValidation.ContactManager" CodeBehind="ContactManager.svc.cs" Factory="ParameterValidation.ContactManagerFactory" %>

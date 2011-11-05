@@ -1,0 +1,96 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Unit tests for parameter validation</title>
+    <script type="text/javascript" src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.6.js"></script>
+    <script type="text/javascript" src="scripts/json2.js"></script>
+    <link rel="stylesheet" href="scripts/qunit.css" type="text/css" media="screen" />
+    <script type="text/javascript" src="scripts/qunit.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+
+            var serviceAddress = "ContactManager.svc/";
+
+            module("Sanity tests");
+
+            asyncTest("Successfully create contact", 3, function () {
+                $.ajax({
+                    type: "POST",
+                    url: serviceAddress + "Contact",
+                    contentType: "application/json",
+                    data: JSON.stringify({ Name: "John Doe", Age: 30, Email: "john@doe.com" }),
+                    success: function (data) {
+                        var location = serviceAddress + "Contacts/" + data;
+                        $.ajax({
+                            type: "GET",
+                            url: location,
+                            cache: false,
+                            success: function (result) {
+                                equal(result.Name, "John Doe", "Name is correct");
+                                equal(result.Age, 30, "Age is correct");
+                                equal(result.Email, "john@doe.com");
+                                start();
+                            }
+                        });
+                    }
+                });
+            });
+
+            module("Validation tests");
+
+            asyncTest("Missing name", 2, function () {
+                sendAndExpectError(undefined, 30, "john@doe.com", 400, "Name is required");
+            });
+
+            asyncTest("Negative age", 2, function () {
+                sendAndExpectError("John Doe", -1, "john@doe.com", 400, "Age must be an integer between 0 and 150");
+            });
+
+            asyncTest("Very high age", 2, function () {
+                sendAndExpectError("John Doe", 151, "john@doe.com", 400, "Age must be an integer between 0 and 150");
+            });
+
+            asyncTest("Missing e-mail", 2, function () {
+                sendAndExpectError("John Doe", 30, undefined, 400, "E-mail is required");
+            });
+
+            asyncTest("Invalid e-mail", 2, function () {
+                sendAndExpectError("John Doe", 30, "abcdef", 400, "E-mail is invalid");
+            });
+
+            function sendAndExpectError(name, age, email, expectedStatusCode, expectedMessage) {
+                var data = JSON.stringify({ Name: name, Age: age, Email: email });
+
+                $.ajax({
+                    type: "POST",
+                    url: serviceAddress + "Contact",
+                    contentType: "application/json",
+                    data: data,
+                    success: function (data) {
+                        ok(false, "Validation should have failed the request");
+                        ok(false, "Result: " + data);
+                    },
+                    error: function (jqXHR) {
+                        var statusCode = jqXHR.status;
+                        var response = $.parseJSON(jqXHR.responseText); ;
+                        equal(statusCode, expectedStatusCode, "Status code is correct");
+                        equal(response.ErrorMessage, expectedMessage, "Message is correct");
+                    },
+                    complete: function () {
+                        start();
+                    }
+                });
+            }
+        });
+
+    </script>
+</head>
+<body>
+    <h1 id="qunit-header">Unit tests for the parameter validation</h1>
+    <h2 id="qunit-banner"></h2>
+    <div id="qunit-testrunner-toolbar"></div>
+    <h2 id="qunit-userAgent"></h2>
+    <ol id="qunit-tests"></ol>
+    <div id="qunit-fixture">test markup, will be hidden</div>
+</body>
+</html>

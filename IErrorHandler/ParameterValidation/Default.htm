@@ -1,0 +1,40 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title></title>
+    <script type="text/javascript" src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.6.js"></script>
+    <script type="text/javascript" src="scripts/json2.js"></script>
+    <script type="text/javascript"'>
+        $(function () {
+            $("#formSubmit").click(function () {
+                var name = $("#name").val();
+                var age = parseInt($("#age").val()) || -1;
+                var email = $("#email").val();
+                var input = JSON.stringify({ Name: name, Age: age, Email: email });
+                $.ajax({
+                    type: "POST",
+                    url: "ContactManager.svc/Contact",
+                    contentType: "application/json",
+                    data: input,
+                    success: function (result) {
+                        $("#debug").val("Added a new contact with id = " + result);
+                    },
+                    error: function (jqXHR) {
+                        $("#debug").val("Error: " + jqXHR.responseText);
+                    }
+                });
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>Contact Manager</h1>
+    <form id="AddContactForm">
+        <p>Name: <input type="text" id="name" /></p>
+        <p>Age: <input type="text" id="age" /></p>
+        <p>E-mail: <input type="text" id="email" /></p>
+        <p><input id="formSubmit" type="button" value="Create Contact" /></p>
+        <p>Result: <input type="text" id="debug"/></p>
+    </form>
+</body>
+</html>
