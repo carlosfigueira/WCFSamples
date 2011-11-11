@@ -1,0 +1,17 @@
+﻿<configuration>
+    <system.serviceModel>
+        <bindings>
+            <customBinding>
+                <binding name="NetTcpBinding_ITest">
+                    <binaryMessageEncoding />
+                    <tcpTransport maxReceivedMessageSize="2147483647" maxBufferSize="2147483647" />
+                </binding>
+            </customBinding>
+        </bindings>
+        <client>
+            <endpoint address="net.tcp://localhost:4504/Service" binding="customBinding"
+                bindingConfiguration="NetTcpBinding_ITest" contract="ServiceReference1.ITest"
+                name="NetTcpBinding_ITest" />
+        </client>
+    </system.serviceModel>
+</configuration>
