@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.ServiceModel.Channels;
+using System.Xml;
 
 namespace JsonRpcOverTcp.Utils
 {
@@ -21,6 +23,31 @@ namespace JsonRpcOverTcp.Utils
             bytes[offset + 1] = (byte)(size >> 16);
             bytes[offset + 2] = (byte)(size >> 8);
             bytes[offset + 3] = (byte)(size);
+        }
+
+        public static Message BytesToMessage(byte[] bytes)
+        {
+            return Message.CreateMessage(MessageVersion.None, null, new RawBodyWriter(bytes));
+        }
+
+        public static byte[] MessageToBytes(Message rawMessage)
+        {
+            XmlDictionaryReader bodyReader = rawMessage.GetReaderAtBodyContents();
+            bodyReader.MoveToContent();
+            if (bodyReader.NodeType == XmlNodeType.Element && bodyReader.Name == "Binary")
+            {
+                bodyReader.Read();
+                return bodyReader.ReadContentAsBase64();
+            }
+            else
+            {
+                throw new ArgumentException(
+                    string.Format(
+                        "Message is not a binary message: current node: {0} - {1} - {2}",
+                        bodyReader.NodeType,
+                        bodyReader.Name,
+                        bodyReader.Value));
+            }
         }
     }
 }

@@ -8,14 +8,14 @@ using System.Net;
 
 namespace JsonRpcOverTcp.SimpleServer
 {
-    public class SimpleServer
+    public class SocketsServer
     {
         Socket listenSocket;
         object serviceImplementation;
         int port;
         Dispatcher dispatcher;
 
-        public SimpleServer(int port, object serviceImplementation)
+        public SocketsServer(int port, object serviceImplementation)
         {
             this.listenSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             this.serviceImplementation = serviceImplementation;
