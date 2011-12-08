@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.ServiceModel.Channels;
-using System.ServiceModel;
 using System.Net;
 using System.Net.Sockets;
+using System.ServiceModel;
+using System.ServiceModel.Channels;
 
 namespace JsonRpcOverTcp.Channels
 {
@@ -25,17 +22,17 @@ namespace JsonRpcOverTcp.Channels
 
         public IAsyncResult BeginRequest(Message message, TimeSpan timeout, AsyncCallback callback, object state)
         {
-            throw new NotImplementedException();
+            throw new NotImplementedException("Still to be implemented");
         }
 
         public IAsyncResult BeginRequest(Message message, AsyncCallback callback, object state)
         {
-            throw new NotImplementedException();
+            return this.BeginRequest(message, base.DefaultSendTimeout, callback, state);
         }
 
         public Message EndRequest(IAsyncResult result)
         {
-            throw new NotImplementedException();
+            throw new NotImplementedException("Still to be implemented");
         }
 
         public EndpointAddress RemoteAddress
@@ -45,13 +42,13 @@ namespace JsonRpcOverTcp.Channels
 
         public Message Request(Message message, TimeSpan timeout)
         {
-            base.Send(message, timeout);
-            return base.Receive(timeout);
+            base.SendMessage(message, timeout);
+            return base.ReceiveMessage(timeout);
         }
 
         public Message Request(Message message)
         {
-            throw new NotImplementedException();
+            return this.Request(message, base.DefaultSendTimeout);
         }
 
         public Uri Via
@@ -80,11 +77,11 @@ namespace JsonRpcOverTcp.Channels
 
             try
             {
-                hostEntry = Dns.GetHostEntry(Via.Host);
+                hostEntry = Dns.GetHostEntry(this.Via.Host);
             }
             catch (SocketException socketException)
             {
-                throw new EndpointNotFoundException("Unable to resolve host" + Via.Host, socketException);
+                throw new EndpointNotFoundException("Unable to resolve host: " + this.Via.Host, socketException);
             }
 
             for (int i = 0; i < hostEntry.AddressList.Length; i++)

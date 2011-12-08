@@ -1,13 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.IO;
-using JsonRpcOverTcp.Utils;
-using JsonRpcOverTcp.SimpleServer;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
+using System.Text;
 using JsonRpcOverTcp.Channels;
+using JsonRpcOverTcp.SimpleServer;
+using JsonRpcOverTcp.Utils;
 
 namespace JsonRpcOverTcp.WcfClient
 {
@@ -16,10 +13,6 @@ namespace JsonRpcOverTcp.WcfClient
     {
         [OperationContract(Action = "*", ReplyAction = "*")]
         Message Process(Message input);
-
-        [OperationContract(Action = "*", ReplyAction = "*", AsyncPattern = true)]
-        IAsyncResult BeginProcessAsync(Message input, AsyncCallback callback, object state);
-        Message EndProcessAsync(IAsyncResult asyncResult);
     }
 
     class Program
@@ -32,14 +25,14 @@ namespace JsonRpcOverTcp.WcfClient
             Console.WriteLine("Started the simple server");
 
             CustomBinding binding = new CustomBinding(new SizedTcpTransportBindingElement());
-            EndpointAddress address = new EndpointAddress(SizedTcpTransportBindingElement.SizedTcpScheme + "://localhost:" + port);
+            EndpointAddress address = new EndpointAddress(
+                SizedTcpTransportBindingElement.SizedTcpScheme + "://localhost:" + port);
             ChannelFactory<IUntypedTest> factory = new ChannelFactory<IUntypedTest>(binding, address);
             IUntypedTest proxy = factory.CreateChannel();
 
-            string largeString = new string('r', 250);
             string[] allInputs = new string[] 
             {
-                "{\"method\":\"Add\",\"params\":[5, 8],\"id\":1,\"largeParamIgnored\":\"" + largeString + "\"}",
+                "{\"method\":\"Add\",\"params\":[5, 8],\"id\":1}",
                 "{\"method\":\"Multiply\",\"params\":[5, 8],\"id\":2}",
                 "{\"method\":\"Divide\",\"params\":[5, 0],\"id\":3}",
             };

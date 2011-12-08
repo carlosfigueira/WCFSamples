@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.ServiceModel.Channels;
 using System.Net.Sockets;
 using System.ServiceModel;
+using System.ServiceModel.Channels;
 using JsonRpcOverTcp.Utils;
 
 namespace JsonRpcOverTcp.Channels
@@ -116,33 +113,7 @@ namespace JsonRpcOverTcp.Channels
             return data;
         }
 
-        // Address the Message and serialize it into a byte array.
-        ArraySegment<byte> EncodeMessage(Message message)
-        {
-            try
-            {
-                return encoder.WriteMessage(message, maxBufferSize, bufferManager);
-            }
-            finally
-            {
-                // we've consumed the message by serializing it, so clean up
-                message.Close();
-            }
-        }
-
-        protected virtual Message DecodeMessage(ArraySegment<byte> data)
-        {
-            if (data.Array == null)
-            {
-                return null;
-            }
-            else
-            {
-                return this.encoder.ReadMessage(data, bufferManager, "application/octet-stream");
-            }
-        }
-
-        public void Send(Message message, TimeSpan timeout)
+        public void SendMessage(Message message, TimeSpan timeout)
         {
             base.ThrowIfDisposedOrNotOpen();
             ArraySegment<byte> encodedBytes = default(ArraySegment<byte>);
@@ -161,6 +132,19 @@ namespace JsonRpcOverTcp.Channels
                 {
                     this.bufferManager.ReturnBuffer(encodedBytes.Array);
                 }
+            }
+        }
+
+        ArraySegment<byte> EncodeMessage(Message message)
+        {
+            try
+            {
+                return encoder.WriteMessage(message, maxBufferSize, bufferManager);
+            }
+            finally
+            {
+                // we've consumed the message by serializing it, so clean up
+                message.Close();
             }
         }
 
@@ -186,12 +170,7 @@ namespace JsonRpcOverTcp.Channels
             return new ArraySegment<byte>(fullBuffer, 0, 4 + data.Count);
         }
 
-        public void Send(Message message)
-        {
-            this.Send(message, base.DefaultSendTimeout);
-        }
-
-        public Message Receive(TimeSpan timeout)
+        public Message ReceiveMessage(TimeSpan timeout)
         {
             base.ThrowIfDisposedOrNotOpen();
             try
@@ -207,8 +186,7 @@ namespace JsonRpcOverTcp.Channels
 
         ArraySegment<byte> ReadData()
         {
-            // 4 bytes lengths
-
+            // 4 bytes length
             byte[] preambleBytes = this.SocketReceiveBytes(4, false);
             if (preambleBytes == null)
             {
@@ -220,6 +198,18 @@ namespace JsonRpcOverTcp.Channels
             byte[] data = this.SocketReceiveBytes(dataLength);
             this.bufferManager.ReturnBuffer(preambleBytes);
             return new ArraySegment<byte>(data, 0, dataLength);
+        }
+
+        protected virtual Message DecodeMessage(ArraySegment<byte> data)
+        {
+            if (data.Array == null)
+            {
+                return null;
+            }
+            else
+            {
+                return this.encoder.ReadMessage(data, bufferManager);
+            }
         }
 
         protected override void OnAbort()

@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Json;
 using System.Reflection;
-using System.Runtime.Serialization.Json;
+using System.Text;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace JsonRpcOverTcp.SimpleServer
 {
@@ -32,63 +33,77 @@ namespace JsonRpcOverTcp.SimpleServer
 
         public byte[] DispatchOperation(byte[] input, int offset, int count)
         {
-            JsonObject inputJson = JsonValue.Load(new MemoryStream(input, offset, count)) as JsonObject;
-            if (inputJson == null)
+            string inputJsonString = Encoding.UTF8.GetString(input, offset, count);
+            JObject outputJson = null;
+            using (MemoryStream ms = new MemoryStream(input, offset, count))
             {
-                throw new ArgumentException("Input is not a JSON object");
-            }
-
-            string methodName = inputJson["method"].ReadAs<string>();
-            MethodInfo method = this.operations[methodName];
-            ParameterInfo[] parameterInfos = method.GetParameters();
-            object[] args = new object[parameterInfos.Length];
-            for (int i = 0; i < args.Length; i++)
-            {
-                args[i] = inputJson["params"][i].ReadAs(parameterInfos[i].ParameterType);
-            }
-            Exception error = null;
-            object result = null;
-            try
-            {
-                result = method.Invoke(this.serviceImplementation, args);
-            }
-            catch (Exception e)
-            {
-                if (e is TargetInvocationException)
+                using (JsonReader jsonReader = new JsonTextReader(new StreamReader(ms, Encoding.UTF8)))
                 {
-                    e = e.InnerException;
-                }
-
-                error = e;
-            }
-
-            JsonObject outputJson = new JsonObject();
-            outputJson.Add("result", JsonValueExtensions.CreateFrom(result));
-            outputJson["error"] = null;
-            JsonObject parent = outputJson;
-            if (error != null)
-            {
-                JsonObject temp = new JsonObject();
-                parent["error"] = temp;
-                while (error != null)
-                {
-                    temp.Add("type", error.GetType().FullName);
-                    temp.Add("message", error.Message);
-                    if (error.InnerException != null)
+                    JObject inputJson = JObject.Load(jsonReader);
+                    string methodName = inputJson["method"].Value<string>();
+                    MethodInfo method = this.operations[methodName];
+                    ParameterInfo[] parameterInfos = method.GetParameters();
+                    object[] args = new object[parameterInfos.Length];
+                    for (int i = 0; i < args.Length; i++)
                     {
-                        parent = temp;
-                        temp = new JsonObject();
-                        parent.Add("inner", temp);
+                        JsonConvert.DeserializeObject(inputJson["params"][i].ToString(), parameterInfos[i].ParameterType);
+                    }
+                    Exception error = null;
+                    object result = null;
+                    try
+                    {
+                        result = method.Invoke(this.serviceImplementation, args);
+                    }
+                    catch (Exception e)
+                    {
+                        if (e is TargetInvocationException)
+                        {
+                            e = e.InnerException;
+                        }
+
+                        error = e;
                     }
 
-                    error = error.InnerException;
+                    outputJson = new JObject();
+                    outputJson.Add("result", result == null ? null : JToken.FromObject(result));
+                    outputJson["error"] = null;
+                    JObject parent = outputJson;
+                    if (error != null)
+                    {
+                        JObject temp = new JObject();
+                        parent["error"] = temp;
+                        while (error != null)
+                        {
+                            temp.Add("type", error.GetType().FullName);
+                            temp.Add("message", error.Message);
+                            if (error.InnerException != null)
+                            {
+                                parent = temp;
+                                temp = new JObject();
+                                parent.Add("inner", temp);
+                            }
+
+                            error = error.InnerException;
+                        }
+                    }
+
+                    outputJson.Add("id", inputJson["id"]);
                 }
             }
 
-            outputJson.Add("id", inputJson["id"]);
-            MemoryStream ms = new MemoryStream();
-            outputJson.Save(ms);
-            return ms.ToArray();
+            using (MemoryStream ms = new MemoryStream())
+            {
+                using (StreamWriter sw = new StreamWriter(ms))
+                {
+                    using (JsonTextWriter jtw = new JsonTextWriter(sw))
+                    {
+                        outputJson.WriteTo(jtw);
+                        jtw.Flush();
+                        sw.Flush();
+                        return ms.ToArray();
+                    }
+                }
+            }
         }
     }
 }

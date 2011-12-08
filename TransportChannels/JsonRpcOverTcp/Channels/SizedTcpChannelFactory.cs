@@ -40,7 +40,12 @@ namespace JsonRpcOverTcp.Channels
 
         protected override IRequestChannel OnCreateChannel(EndpointAddress address, Uri via)
         {
-            return new SizedTcpRequestChannel(this.encoderFactory.Encoder, this.bufferManager, this, address, via);
+            return new SizedTcpRequestChannel(
+                this.encoderFactory.Encoder, 
+                this.bufferManager, 
+                this, 
+                address, 
+                via);
         }
 
         protected override IAsyncResult OnBeginOpen(TimeSpan timeout, AsyncCallback callback, object state)
