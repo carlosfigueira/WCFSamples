@@ -16,9 +16,9 @@ namespace JsonRpcOverTcp.ServiceModel
 
         public void ApplyClientBehavior(ServiceEndpoint endpoint, ClientRuntime clientRuntime)
         {
+            clientRuntime.MessageInspectors.Add(new JsonRpcClientMessageInspector());
             foreach (OperationDescription operation in endpoint.Contract.Operations)
             {
-                clientRuntime.MessageInspectors.Add(new JsonRpcClientMessageInspector());
                 if (!JsonRpcHelpers.IsUntypedMessage(operation))
                 {
                     ClientOperation clientOperation = clientRuntime.Operations[operation.Name];
