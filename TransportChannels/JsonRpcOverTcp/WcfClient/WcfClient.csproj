@@ -58,6 +58,10 @@
       <Project>{D25559A9-5681-4578-8DA0-8EFEF7B8C41E}</Project>
       <Name>Channels</Name>
     </ProjectReference>
+    <ProjectReference Include="..\ServiceModel\ServiceModel.csproj">
+      <Project>{E7388BB9-1925-44FC-BC2F-E313BE3904A4}</Project>
+      <Name>ServiceModel</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SimpleServer\SimpleServer.csproj">
       <Project>{DE7B4DD2-8EA8-4FA7-BAC9-EECFFD77767A}</Project>
       <Name>SimpleServer</Name>

@@ -46,7 +46,7 @@ namespace JsonRpcOverTcp.SimpleServer
                     object[] args = new object[parameterInfos.Length];
                     for (int i = 0; i < args.Length; i++)
                     {
-                        JsonConvert.DeserializeObject(inputJson["params"][i].ToString(), parameterInfos[i].ParameterType);
+                        args[i] = JsonConvert.DeserializeObject(inputJson["params"][i].ToString(), parameterInfos[i].ParameterType);
                     }
                     Exception error = null;
                     object result = null;

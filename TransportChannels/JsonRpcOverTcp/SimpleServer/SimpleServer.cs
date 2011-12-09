@@ -71,39 +71,47 @@ namespace JsonRpcOverTcp.SimpleServer
             try
             {
                 int bytesReceived = state.ClientSocket.EndReceive(asyncResult);
-                if (bytesReceived < state.Count)
+                if (bytesReceived == 0)
                 {
-                    state.ClientSocket.BeginReceive(state.Buffer, state.Offset + bytesReceived, state.Count - bytesReceived, SocketFlags.None, OnReceive, state);
+                    // Client closing the socket
+                    state.ClientSocket.Close();
                 }
                 else
                 {
-                    if (state.ReceivingLength)
+                    if (bytesReceived < state.Count)
                     {
-                        int length = Formatting.BytesToSize(state.Buffer, state.Offset);
-                        Console.WriteLine("Length: {0}", length);
-                        state.ReceivingLength = false;
-                        state.Buffer = new byte[length];
-                        state.Count = length;
-                        state.ClientSocket.BeginReceive(state.Buffer, 0, length, SocketFlags.None, OnReceive, state);
+                        state.ClientSocket.BeginReceive(state.Buffer, state.Offset + bytesReceived, state.Count - bytesReceived, SocketFlags.None, OnReceive, state);
                     }
                     else
                     {
-                        Debugging.PrintBytes(state.Buffer, state.Count);
-                        byte[] lengthBytes = new byte[4];
-                        byte[] response = this.dispatcher.DispatchOperation(state.Buffer, state.Offset, state.Count);
-                        Formatting.SizeToBytes(response.Length, lengthBytes, 0);
-                        state.ClientSocket.Send(lengthBytes);
-                        state.ClientSocket.Send(response);
-
-                        ReceiveState receiveState = new ReceiveState
+                        if (state.ReceivingLength)
                         {
-                            ClientSocket = state.ClientSocket,
-                            Buffer = new byte[4],
-                            Offset = 0,
-                            Count = 4,
-                            ReceivingLength = true,
-                        };
-                        state.ClientSocket.BeginReceive(receiveState.Buffer, 0, 4, SocketFlags.None, OnReceive, receiveState);
+                            int length = Formatting.BytesToSize(state.Buffer, state.Offset);
+                            Console.WriteLine("Length: {0}", length);
+                            state.ReceivingLength = false;
+                            state.Buffer = new byte[length];
+                            state.Count = length;
+                            state.ClientSocket.BeginReceive(state.Buffer, 0, length, SocketFlags.None, OnReceive, state);
+                        }
+                        else
+                        {
+                            Debugging.PrintBytes(state.Buffer, state.Count);
+                            byte[] lengthBytes = new byte[4];
+                            byte[] response = this.dispatcher.DispatchOperation(state.Buffer, state.Offset, state.Count);
+                            Formatting.SizeToBytes(response.Length, lengthBytes, 0);
+                            state.ClientSocket.Send(lengthBytes);
+                            state.ClientSocket.Send(response);
+
+                            ReceiveState receiveState = new ReceiveState
+                            {
+                                ClientSocket = state.ClientSocket,
+                                Buffer = new byte[4],
+                                Offset = 0,
+                                Count = 4,
+                                ReceivingLength = true,
+                            };
+                            state.ClientSocket.BeginReceive(receiveState.Buffer, 0, 4, SocketFlags.None, OnReceive, receiveState);
+                        }
                     }
                 }
             }
