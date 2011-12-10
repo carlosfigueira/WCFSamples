@@ -18,12 +18,12 @@ namespace JsonRpcOverTcp.ServiceModel
             int requestId = (int)correlationState;
             if (replyId != requestId)
             {
-                throw new CommunicationException("Reply does not correspond to the request!");
+                throw new JsonRpcException("id mismatch", "Reply does not correspond to the request!");
             }
 
             if (json[JsonRpcConstants.ErrorKey].Type != JTokenType.Null)
             {
-                throw new CommunicationException("Error from the service: " + json[JsonRpcConstants.ErrorKey].ToString());
+                throw new JsonRpcException(json[JsonRpcConstants.ErrorKey]);
             }
         }
 

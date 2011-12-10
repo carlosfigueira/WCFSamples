@@ -59,14 +59,34 @@ namespace JsonRpcOverTcp.Channels
 
         void SocketSend(ArraySegment<byte> buffer)
         {
-            try
+            int bytesAlreadySent = 0;
+            while (bytesAlreadySent < buffer.Count)
             {
-                socket.Send(buffer.Array, buffer.Offset, buffer.Count, SocketFlags.None);
+                try
+                {
+                    int bytesSent = socket.Send(buffer.Array, buffer.Offset, buffer.Count, SocketFlags.None);
+                    bytesAlreadySent += bytesSent;
+                }
+                catch (SocketException socketException)
+                {
+                    throw ConvertSocketException(socketException, "Send");
+                }
             }
-            catch (SocketException socketException)
-            {
-                throw ConvertSocketException(socketException, "Send");
-            }
+        }
+
+        IAsyncResult BeginSocketSend(byte[] buffer, AsyncCallback callback, object state)
+        {
+            return BeginSocketSend(new ArraySegment<byte>(buffer), callback, state);
+        }
+
+        IAsyncResult BeginSocketSend(ArraySegment<byte> buffer, AsyncCallback callback, object state)
+        {
+            return new SocketSendAsyncResult(buffer, this, callback, state);
+        }
+
+        void EndSocketSend(IAsyncResult result)
+        {
+            SocketSendAsyncResult.End(result);
         }
 
         int SocketReceive(byte[] buffer, int offset, int size)
@@ -113,6 +133,45 @@ namespace JsonRpcOverTcp.Channels
             return data;
         }
 
+        IAsyncResult BeginSocketReceiveBytes(int size, AsyncCallback callback, object state)
+        {
+            return BeginSocketReceiveBytes(size, true, callback, state);
+        }
+
+        IAsyncResult BeginSocketReceiveBytes(int size, bool throwOnEmpty, AsyncCallback callback, object state)
+        {
+            return new SocketReceiveAsyncResult(size, throwOnEmpty, this, callback, state);
+        }
+
+        byte[] EndSocketReceiveBytes(IAsyncResult result)
+        {
+            return SocketReceiveAsyncResult.End(result);
+        }
+
+        IAsyncResult BeginSocketReceive(byte[] buffer, int offset, int size, AsyncCallback callback, object state)
+        {
+            try
+            {
+                return socket.BeginReceive(buffer, offset, size, SocketFlags.None, callback, state);
+            }
+            catch (SocketException socketException)
+            {
+                throw ConvertSocketException(socketException, "BeginSocketReceive");
+            }
+        }
+
+        int EndSocketReceive(IAsyncResult result)
+        {
+            try
+            {
+                return socket.EndReceive(result);
+            }
+            catch (SocketException socketException)
+            {
+                throw ConvertSocketException(socketException, "EndSocketReceive");
+            }
+        }
+
         public void SendMessage(Message message, TimeSpan timeout)
         {
             base.ThrowIfDisposedOrNotOpen();
@@ -133,6 +192,17 @@ namespace JsonRpcOverTcp.Channels
                     this.bufferManager.ReturnBuffer(encodedBytes.Array);
                 }
             }
+        }
+
+        public void BeginSendMessage(Message message, TimeSpan timeout, AsyncCallback callback, object state)
+        {
+            base.ThrowIfDisposedOrNotOpen();
+            return new SendMessageAsyncResult(message, timeout, this, callback, state);
+        }
+
+        public void EndSend(IAsyncResult result)
+        {
+            SendMessageAsyncResult.End(result);
         }
 
         ArraySegment<byte> EncodeMessage(Message message)
@@ -159,6 +229,16 @@ namespace JsonRpcOverTcp.Channels
             {
                 this.bufferManager.ReturnBuffer(toSend.Array);
             }
+        }
+
+        private IAsyncResult BeginWriteData(ArraySegment<byte> data, TimeSpan timeout, AsyncCallback callback, object state)
+        {
+            return new WriteDataAsyncResult(data, timeout, this, callback, state);
+        }
+
+        void EndWriteData(IAsyncResult result)
+        {
+            WriteDataAsyncResult.End(result);
         }
 
         ArraySegment<byte> AddLengthToBuffer(ArraySegment<byte> data)
@@ -199,6 +279,17 @@ namespace JsonRpcOverTcp.Channels
             this.bufferManager.ReturnBuffer(preambleBytes);
             return new ArraySegment<byte>(data, 0, dataLength);
         }
+
+        IAsyncResult BeginReadData(AsyncCallback callback, object state)
+        {
+            return new ReadDataAsyncResult(this, callback, state);
+        }
+
+        ArraySegment<byte> EndReadData(IAsyncResult result)
+        {
+            return ReadDataAsyncResult.End(result);
+        }
+
 
         protected virtual Message DecodeMessage(ArraySegment<byte> data)
         {
@@ -249,6 +340,515 @@ namespace JsonRpcOverTcp.Channels
 
         protected override void OnOpen(TimeSpan timeout)
         {
+        }
+
+        class SocketSendAsyncResult : AsyncResult
+        {
+            SizedTcpBaseChannel channel;
+            ArraySegment<byte> buffer;
+
+            public SocketSendAsyncResult(ArraySegment<byte> buffer, SizedTcpBaseChannel channel, AsyncCallback callback, object state)
+                : base(callback, state)
+            {
+                this.channel = channel;
+                this.buffer = buffer;
+
+                this.StartSending();
+            }
+
+            void StartSending()
+            {
+                IAsyncResult sendResult = this.channel.socket.BeginSend(this.buffer.Array, this.buffer.Offset, this.buffer.Count, SocketFlags.None, OnSend, this);
+                if (!sendResult.CompletedSynchronously)
+                {
+                    return;
+                }
+
+                if (this.CompleteSend(sendResult))
+                {
+                    base.Complete(true);
+                }
+                else
+                {
+                    this.StartSending();
+                }
+            }
+
+            bool CompleteSend(IAsyncResult result)
+            {
+                try
+                {
+                    int bytesSent = channel.socket.EndSend(result);
+                    if (bytesSent == this.buffer.Count)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        this.buffer = new ArraySegment<byte>(this.buffer.Array, this.buffer.Offset + bytesSent, this.buffer.Count - bytesSent);
+                        return false;
+                    }
+                }
+                catch (SocketException socketException)
+                {
+                    throw ConvertSocketException(socketException, "Send");
+                }
+            }
+
+            static void OnSend(IAsyncResult result)
+            {
+                if (result.CompletedSynchronously)
+                {
+                    return;
+                }
+
+                SocketSendAsyncResult thisPtr = (SocketSendAsyncResult)result.AsyncState;
+                Exception completionException = null;
+                bool shouldComplete = false;
+                try
+                {
+                    if (thisPtr.CompleteSend(result))
+                    {
+                        shouldComplete = true;
+                    }
+                    else
+                    {
+                        thisPtr.StartSending();
+                    }
+                }
+                catch (Exception e)
+                {
+                    completionException = e;
+                }
+
+                if (shouldComplete)
+                {
+                    thisPtr.Complete(false, completionException);
+                }
+            }
+
+
+            public static void End(IAsyncResult result)
+            {
+                AsyncResult.End<SocketSendAsyncResult>(result);
+            }
+        }
+
+        class SocketReceiveAsyncResult : AsyncResult
+        {
+            SizedTcpBaseChannel channel;
+            int size;
+            int bytesReadTotal;
+            byte[] buffer;
+            bool throwOnEmpty;
+
+            static AsyncCallback readBytesCallback = new AsyncCallback(OnReadBytes);
+
+            public SocketReceiveAsyncResult(int size, bool throwOnEmpty, SizedTcpBaseChannel channel, AsyncCallback callback, object state)
+                : base(callback, state)
+            {
+                this.size = size;
+                this.channel = channel;
+                this.throwOnEmpty = throwOnEmpty;
+                this.bytesReadTotal = 0;
+                this.buffer = channel.bufferManager.TakeBuffer(size);
+
+                bool success = false;
+                try
+                {
+                    IAsyncResult socketReceiveResult = channel.BeginSocketReceive(this.buffer, bytesReadTotal, size, readBytesCallback, this);
+                    if (socketReceiveResult.CompletedSynchronously)
+                    {
+                        if (CompleteReadBytes(socketReceiveResult))
+                        {
+                            base.Complete(true);
+                        }
+                    }
+                    success = true;
+                }
+                finally
+                {
+                    if (!success)
+                    {
+                        this.Cleanup();
+                    }
+                }
+            }
+
+            void Cleanup()
+            {
+                if (this.buffer != null)
+                {
+                    channel.bufferManager.ReturnBuffer(this.buffer);
+                    this.buffer = null;
+                }
+            }
+
+            bool CompleteReadBytes(IAsyncResult result)
+            {
+                int bytesRead = channel.EndSocketReceive(result);
+                bytesReadTotal += bytesRead;
+                if (bytesRead == 0)
+                {
+                    if (size == 0 || !throwOnEmpty)
+                    {
+                        channel.bufferManager.ReturnBuffer(this.buffer);
+                        this.buffer = null;
+                        return true;
+                    }
+                    else
+                    {
+                        throw new CommunicationException("Premature EOF reached");
+                    }
+                }
+
+                while (bytesReadTotal < size)
+                {
+                    IAsyncResult socketReceiveResult = channel.BeginSocketReceive(buffer, bytesReadTotal, size - bytesReadTotal, readBytesCallback, this);
+                    if (!socketReceiveResult.CompletedSynchronously)
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            static void OnReadBytes(IAsyncResult result)
+            {
+                if (result.CompletedSynchronously)
+                {
+                    return;
+                }
+
+                SocketReceiveAsyncResult thisPtr = (SocketReceiveAsyncResult)result.AsyncState;
+
+                Exception completionException = null;
+                bool completeSelf = false;
+                try
+                {
+                    completeSelf = thisPtr.CompleteReadBytes(result);
+                }
+                catch (Exception e)
+                {
+                    completeSelf = true;
+                    completionException = e;
+                    thisPtr.Cleanup();
+                }
+
+                if (completeSelf)
+                {
+                    thisPtr.Complete(false, completionException);
+                }
+            }
+
+            public static byte[] End(IAsyncResult result)
+            {
+                try
+                {
+                    SocketReceiveAsyncResult thisPtr = AsyncResult.End<SocketReceiveAsyncResult>(result);
+                    return thisPtr.buffer;
+                }
+                catch (ObjectDisposedException)
+                {
+                    return null;
+                }
+            }
+        }
+
+        class WriteDataAsyncResult : AsyncResult
+        {
+            SizedTcpBaseChannel channel;
+            ArraySegment<byte> toSend;
+
+            public WriteDataAsyncResult(ArraySegment<byte> data, TimeSpan timeout, SizedTcpBaseChannel channel, AsyncCallback callback, object state)
+                : base(callback, state)
+            {
+                this.channel = channel;
+                bool success = false;
+                try
+                {
+                    this.toSend = this.channel.AddLengthToBuffer(data);
+
+                    IAsyncResult sendResult = channel.BeginSocketSend(this.toSend, OnSend, this);
+                    if (!sendResult.CompletedSynchronously)
+                    {
+                        return;
+                    }
+
+                    if (CompleteSend(sendResult))
+                    {
+                        Cleanup();
+                        base.Complete(true);
+                    }
+
+                    success = true;
+                }
+                finally
+                {
+                    if (!success)
+                    {
+                        Cleanup();
+                    }
+                }
+            }
+
+            bool CompleteSend(IAsyncResult asyncResult)
+            {
+                this.channel.EndSocketSend(asyncResult);
+                return true;
+            }
+
+            static void OnSend(IAsyncResult result)
+            {
+                if (result.CompletedSynchronously)
+                {
+                    return;
+                }
+
+                WriteDataAsyncResult thisPtr = (WriteDataAsyncResult)result.AsyncState;
+                Exception completionException = null;
+                bool completeSelf = false;
+                try
+                {
+                    completeSelf = thisPtr.CompleteSend(result);
+                }
+                catch (Exception e)
+                {
+                    completeSelf = true;
+                    completionException = e;
+                }
+
+                if (completeSelf)
+                {
+                    thisPtr.Complete(false, completionException);
+                }
+            }
+
+            public void Cleanup()
+            {
+                if (this.toSend.Array != null)
+                {
+                    this.channel.bufferManager.ReturnBuffer(this.toSend.Array);
+                    this.toSend = default(ArraySegment<byte>);
+                }
+            }
+
+            public static void End(IAsyncResult result)
+            {
+                AsyncResult.End<WriteDataAsyncResult>(result);
+            }
+        }
+
+        class ReadDataAsyncResult : AsyncResult
+        {
+            ArraySegment<byte> buffer;
+            SizedTcpBaseChannel channel;
+            int dataLength;
+            byte[] lengthBytes;
+            byte[] data;
+
+            public ReadDataAsyncResult(SizedTcpBaseChannel channel, AsyncCallback callback, object state)
+                : base(callback, state)
+            {
+                this.channel = channel;
+
+                bool success = false;
+                try
+                {
+                    IAsyncResult drainLengthResult = channel.BeginSocketReceiveBytes(4, false, OnDrainLength, this);
+                    if (drainLengthResult.CompletedSynchronously)
+                    {
+                        if (CompleteDrainLength(drainLengthResult))
+                        {
+                            base.Complete(true);
+                        }
+                    }
+
+                    success = true;
+                }
+                catch (CommunicationException e)
+                {
+                    base.Complete(true, e);
+                }
+                finally
+                {
+                    if (!success)
+                    {
+                        this.Cleanup();
+                    }
+                }
+            }
+
+            bool CompleteDrainLength(IAsyncResult result)
+            {
+                this.lengthBytes = channel.EndSocketReceiveBytes(result);
+                if (this.lengthBytes == null)
+                {
+                    this.buffer = new ArraySegment<byte>();
+                    return true;
+                }
+
+                this.dataLength = Formatting.BytesToSize(this.lengthBytes, 0);
+
+                IAsyncResult readDataResult = channel.BeginSocketReceiveBytes(this.dataLength, OnReadData, this);
+                if (!readDataResult.CompletedSynchronously)
+                {
+                    return false;
+                }
+
+                return CompleteReadData(result);
+            }
+
+            bool CompleteReadData(IAsyncResult result)
+            {
+                data = channel.EndSocketReceiveBytes(result);
+                this.buffer = new ArraySegment<byte>(this.data, 0, this.dataLength);
+                CleanupLength();
+                return true;
+            }
+
+            static void OnDrainLength(IAsyncResult result)
+            {
+                if (result.CompletedSynchronously)
+                {
+                    return;
+                }
+
+                ReadDataAsyncResult thisPtr = (ReadDataAsyncResult)result.AsyncState;
+
+                Exception completionException = null;
+                bool completeSelf = false;
+                try
+                {
+                    completeSelf = thisPtr.CompleteDrainLength(result);
+                }
+                catch (Exception e)
+                {
+                    completeSelf = true;
+                    completionException = e;
+                    thisPtr.Cleanup();
+                }
+
+                if (completeSelf)
+                {
+                    thisPtr.Complete(false, completionException);
+                }
+            }
+
+            static void OnReadData(IAsyncResult result)
+            {
+                if (result.CompletedSynchronously)
+                {
+                    return;
+                }
+
+                ReadDataAsyncResult thisPtr = (ReadDataAsyncResult)result.AsyncState;
+
+                Exception completionException = null;
+                bool completeSelf = false;
+                try
+                {
+                    completeSelf = thisPtr.CompleteReadData(result);
+                }
+                catch (Exception e)
+                {
+                    completeSelf = true;
+                    completionException = e;
+                    thisPtr.Cleanup();
+                }
+
+                if (completeSelf)
+                {
+                    thisPtr.Complete(false, completionException);
+                }
+            }
+
+            public static ArraySegment<byte> End(IAsyncResult result)
+            {
+                ReadDataAsyncResult thisPtr = AsyncResult.End<ReadDataAsyncResult>(result);
+                return thisPtr.buffer;
+            }
+
+            void Cleanup()
+            {
+                if (this.data != null)
+                {
+                    this.channel.bufferManager.ReturnBuffer(data);
+                    this.data = null;
+                }
+
+                CleanupLength();
+            }
+
+            void CleanupLength()
+            {
+                if (this.lengthBytes != null)
+                {
+                    this.channel.bufferManager.ReturnBuffer(lengthBytes);
+                    this.lengthBytes = null;
+                }
+            }
+        }
+
+        class SendMessageAsyncResult : AsyncResult
+        {
+            SizedTcpBaseChannel channel;
+
+            public SendMessageAsyncResult(Message message, TimeSpan timeout, SizedTcpBaseChannel channel, AsyncCallback callback, object state)
+                : base(callback, state)
+            {
+                this.channel = channel;
+
+                ArraySegment<byte> encodedBytes = this.channel.EncodeMessage(message);
+
+                IAsyncResult writeResult = channel.BeginWriteData(encodedBytes, timeout, OnWrite, this);
+                if (!writeResult.CompletedSynchronously)
+                {
+                    return;
+                }
+
+                this.CompleteWrite(writeResult);
+                base.Complete(true);
+            }
+
+            void CompleteWrite(IAsyncResult result)
+            {
+                try
+                {
+                    channel.EndWriteData(result);
+                }
+                catch (SocketException socketException)
+                {
+                    throw ConvertSocketException(socketException, "SendMessage");
+                }
+            }
+
+            static void OnWrite(IAsyncResult result)
+            {
+                if (result.CompletedSynchronously)
+                {
+                    return;
+                }
+
+                SendMessageAsyncResult thisPtr = (SendMessageAsyncResult)result.AsyncState;
+                Exception completionException = null;
+                try
+                {
+                    thisPtr.CompleteWrite(result);
+                }
+                catch (Exception e)
+                {
+                    completionException = e;
+                }
+
+                thisPtr.Complete(false, completionException);
+            }
+
+            public static void End(IAsyncResult result)
+            {
+                AsyncResult.End<SendMessageAsyncResult>(result);
+            }
         }
     }
 }

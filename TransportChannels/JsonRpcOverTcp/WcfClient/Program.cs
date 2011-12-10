@@ -88,9 +88,9 @@ namespace JsonRpcOverTcp.WcfClient
                 result = typedProxy.Divide(5, 0);
                 Console.WriteLine("  ==> Result: {0}", result);
             }
-            catch (Exception e)
+            catch (JsonRpcException e)
             {
-                Console.WriteLine("Error: {0}", e);
+                Console.WriteLine("Error: {0}", e.JsonException);
             }
         }
     }

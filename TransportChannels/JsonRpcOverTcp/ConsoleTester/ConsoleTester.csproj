@@ -5,14 +5,13 @@
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{557E1CAC-532D-48C0-89E6-659051051A92}</ProjectGuid>
+    <ProjectGuid>{C3C3BB7C-598A-443B-9FC4-F3F4D9C0919E}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>JsonRpcOverTcp.WcfClient</RootNamespace>
-    <AssemblyName>JsonRpcOverTcp.WcfClient</AssemblyName>
+    <RootNamespace>JsonRpcOverTcp.ConsoleTester</RootNamespace>
+    <AssemblyName>JsonRpcOverTcp.ConsoleTester</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <TargetFrameworkProfile>
-    </TargetFrameworkProfile>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
@@ -35,15 +34,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=4.0.4.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\lib\Newtonsoft.Json.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.ServiceModel" />
-    <Reference Include="System.ServiceModel.Channels" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -55,20 +47,13 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
-  </ItemGroup>
-  <ItemGroup>
+    <ProjectReference Include="..\Channels.Test\Channels.Test.csproj">
+      <Project>{53F8F5A3-1419-4AE7-AFC3-AB0053485D31}</Project>
+      <Name>Channels.Test</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Channels\Channels.csproj">
       <Project>{D25559A9-5681-4578-8DA0-8EFEF7B8C41E}</Project>
       <Name>Channels</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\ServiceModel\ServiceModel.csproj">
-      <Project>{E7388BB9-1925-44FC-BC2F-E313BE3904A4}</Project>
-      <Name>ServiceModel</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SimpleServer\SimpleServer.csproj">
-      <Project>{DE7B4DD2-8EA8-4FA7-BAC9-EECFFD77767A}</Project>
-      <Name>SimpleServer</Name>
     </ProjectReference>
     <ProjectReference Include="..\Utils\Utils.csproj">
       <Project>{69A716E4-31E4-4758-9398-4055436D67F4}</Project>

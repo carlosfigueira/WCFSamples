@@ -48,6 +48,7 @@
     <Compile Include="JsonRpcClientMessageInspector.cs" />
     <Compile Include="JsonRpcConstants.cs" />
     <Compile Include="JsonRpcEndpointBehavior.cs" />
+    <Compile Include="JsonRpcException.cs" />
     <Compile Include="JsonRpcHelpers.cs" />
     <Compile Include="JsonRpcMessageFormatter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
