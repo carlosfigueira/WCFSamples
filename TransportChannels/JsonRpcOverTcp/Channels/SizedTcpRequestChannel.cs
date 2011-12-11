@@ -18,8 +18,6 @@ namespace JsonRpcOverTcp.Channels
             this.remoteAddress = remoteAddress;
         }
 
-        #region IRequestChannel Members
-
         public IAsyncResult BeginRequest(Message message, TimeSpan timeout, AsyncCallback callback, object state)
         {
             return new RequestAsyncResult(message, timeout, this, callback, state);
@@ -55,8 +53,6 @@ namespace JsonRpcOverTcp.Channels
         {
             get { return this.via; }
         }
-
-        #endregion
 
         protected override void OnOpen(TimeSpan timeout)
         {

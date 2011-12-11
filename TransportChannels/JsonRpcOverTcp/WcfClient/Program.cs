@@ -113,7 +113,7 @@ namespace JsonRpcOverTcp.WcfClient
 
             Console.WriteLine();
             Console.WriteLine("Now using the typed asynchronous interface");
-            ChannelFactory<ITypedTestAsync> asyncTypedFactory = new ChannelFactory<ITypedTestAsync>(binding, address);
+            var asyncTypedFactory = new ChannelFactory<ITypedTestAsync>(binding, address);
             asyncTypedFactory.Endpoint.Behaviors.Add(new JsonRpcEndpointBehavior());
             ITypedTestAsync asyncTypedProxy = asyncTypedFactory.CreateChannel();
 
