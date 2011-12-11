@@ -10,8 +10,8 @@ namespace JsonRpcOverTcp.ConsoleTester
     {
         static void Main(string[] args)
         {
-            SocketClientTests tests = new SocketClientTests();
-            tests.SynchronousWriteDataAsynchronousReadData();
+            var tests = new RequestChannelTests();
+            tests.AsynchronousOpen();
         }
     }
 }

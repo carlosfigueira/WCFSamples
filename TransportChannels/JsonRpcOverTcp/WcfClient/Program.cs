@@ -6,6 +6,7 @@ using JsonRpcOverTcp.Channels;
 using JsonRpcOverTcp.SimpleServer;
 using JsonRpcOverTcp.Utils;
 using JsonRpcOverTcp.ServiceModel;
+using System.Threading;
 
 namespace JsonRpcOverTcp.WcfClient
 {
@@ -27,6 +28,23 @@ namespace JsonRpcOverTcp.WcfClient
         int Multiply(int x, int y);
         [OperationContract]
         int Divide(int x, int y);
+    }
+
+    [ServiceContract]
+    public interface ITypedTestAsync
+    {
+        [OperationContract(AsyncPattern = true)]
+        IAsyncResult BeginAdd(int x, int y, AsyncCallback callback, object state);
+        int EndAdd(IAsyncResult asyncResult);
+        [OperationContract(AsyncPattern = true)]
+        IAsyncResult BeginSubtract(int x, int y, AsyncCallback callback, object state);
+        int EndSubtract(IAsyncResult asyncResult);
+        [OperationContract(AsyncPattern = true)]
+        IAsyncResult BeginMultiply(int x, int y, AsyncCallback callback, object state);
+        int EndMultiply(IAsyncResult asyncResult);
+        [OperationContract(AsyncPattern = true)]
+        IAsyncResult BeginDivide(int x, int y, AsyncCallback callback, object state);
+        int EndDivide(IAsyncResult asyncResult);
     }
 
     class Program
@@ -92,6 +110,51 @@ namespace JsonRpcOverTcp.WcfClient
             {
                 Console.WriteLine("Error: {0}", e.JsonException);
             }
+
+            Console.WriteLine();
+            Console.WriteLine("Now using the typed asynchronous interface");
+            ChannelFactory<ITypedTestAsync> asyncTypedFactory = new ChannelFactory<ITypedTestAsync>(binding, address);
+            asyncTypedFactory.Endpoint.Behaviors.Add(new JsonRpcEndpointBehavior());
+            ITypedTestAsync asyncTypedProxy = asyncTypedFactory.CreateChannel();
+
+            AutoResetEvent evt = new AutoResetEvent(false);
+            Console.WriteLine("Calling BeginAdd");
+            asyncTypedProxy.BeginAdd(5, 8, delegate(IAsyncResult ar)
+            {
+                result = asyncTypedProxy.EndAdd(ar);
+                Console.WriteLine("  ==> Result: {0}", result);
+                Console.WriteLine();
+                evt.Set();
+            }, null);
+            evt.WaitOne();
+
+            Console.WriteLine("Calling BeginMultiply");
+            asyncTypedProxy.BeginMultiply(5, 8, delegate(IAsyncResult ar)
+            {
+                result = asyncTypedProxy.EndMultiply(ar);
+                Console.WriteLine("  ==> Result: {0}", result);
+                Console.WriteLine();
+                evt.Set();
+            }, null);
+            evt.WaitOne();
+
+            Console.WriteLine("Calling BeginDivide (throws)");
+            asyncTypedProxy.BeginDivide(5, 0, delegate(IAsyncResult ar)
+            {
+                try
+                {
+                    result = asyncTypedProxy.EndDivide(ar);
+                    Console.WriteLine("  ==> Result: {0}", result);
+                }
+                catch (JsonRpcException e)
+                {
+                    Console.WriteLine("Error: {0}", e.JsonException);
+                }
+
+                Console.WriteLine();
+                evt.Set();
+            }, null);
+            evt.WaitOne();
         }
     }
 }

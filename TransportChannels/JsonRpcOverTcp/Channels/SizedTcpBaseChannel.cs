@@ -194,13 +194,13 @@ namespace JsonRpcOverTcp.Channels
             }
         }
 
-        public void BeginSendMessage(Message message, TimeSpan timeout, AsyncCallback callback, object state)
+        public IAsyncResult BeginSendMessage(Message message, TimeSpan timeout, AsyncCallback callback, object state)
         {
             base.ThrowIfDisposedOrNotOpen();
             return new SendMessageAsyncResult(message, timeout, this, callback, state);
         }
 
-        public void EndSend(IAsyncResult result)
+        public void EndSendMessage(IAsyncResult result)
         {
             SendMessageAsyncResult.End(result);
         }
@@ -233,12 +233,13 @@ namespace JsonRpcOverTcp.Channels
 
         private IAsyncResult BeginWriteData(ArraySegment<byte> data, TimeSpan timeout, AsyncCallback callback, object state)
         {
-            return new WriteDataAsyncResult(data, timeout, this, callback, state);
+            ArraySegment<byte> toSend = this.AddLengthToBuffer(data);
+            return new SocketSendAsyncResult(toSend, this, callback, state);
         }
 
         void EndWriteData(IAsyncResult result)
         {
-            WriteDataAsyncResult.End(result);
+            SocketSendAsyncResult.End(result);
         }
 
         ArraySegment<byte> AddLengthToBuffer(ArraySegment<byte> data)
@@ -262,6 +263,17 @@ namespace JsonRpcOverTcp.Channels
             {
                 throw ConvertSocketException(socketException, "Receive");
             }
+        }
+
+        public IAsyncResult BeginReceiveMessage(TimeSpan timeout, AsyncCallback callback, object state)
+        {
+            base.ThrowIfDisposedOrNotOpen();
+            return new ReceiveMessageAsyncResult(timeout, this, callback, state);
+        }
+
+        public Message EndReceiveMessage(IAsyncResult result)
+        {
+            return ReceiveMessageAsyncResult.End(result);
         }
 
         ArraySegment<byte> ReadData()
@@ -289,7 +301,6 @@ namespace JsonRpcOverTcp.Channels
         {
             return ReadDataAsyncResult.End(result);
         }
-
 
         protected virtual Message DecodeMessage(ArraySegment<byte> data)
         {
@@ -442,8 +453,6 @@ namespace JsonRpcOverTcp.Channels
             byte[] buffer;
             bool throwOnEmpty;
 
-            static AsyncCallback readBytesCallback = new AsyncCallback(OnReadBytes);
-
             public SocketReceiveAsyncResult(int size, bool throwOnEmpty, SizedTcpBaseChannel channel, AsyncCallback callback, object state)
                 : base(callback, state)
             {
@@ -456,7 +465,7 @@ namespace JsonRpcOverTcp.Channels
                 bool success = false;
                 try
                 {
-                    IAsyncResult socketReceiveResult = channel.BeginSocketReceive(this.buffer, bytesReadTotal, size, readBytesCallback, this);
+                    IAsyncResult socketReceiveResult = channel.BeginSocketReceive(this.buffer, bytesReadTotal, size, OnReadBytes, this);
                     if (socketReceiveResult.CompletedSynchronously)
                     {
                         if (CompleteReadBytes(socketReceiveResult))
@@ -504,7 +513,7 @@ namespace JsonRpcOverTcp.Channels
 
                 while (bytesReadTotal < size)
                 {
-                    IAsyncResult socketReceiveResult = channel.BeginSocketReceive(buffer, bytesReadTotal, size - bytesReadTotal, readBytesCallback, this);
+                    IAsyncResult socketReceiveResult = channel.BeginSocketReceive(buffer, bytesReadTotal, size - bytesReadTotal, OnReadBytes, this);
                     if (!socketReceiveResult.CompletedSynchronously)
                     {
                         return false;
@@ -553,90 +562,6 @@ namespace JsonRpcOverTcp.Channels
                 {
                     return null;
                 }
-            }
-        }
-
-        class WriteDataAsyncResult : AsyncResult
-        {
-            SizedTcpBaseChannel channel;
-            ArraySegment<byte> toSend;
-
-            public WriteDataAsyncResult(ArraySegment<byte> data, TimeSpan timeout, SizedTcpBaseChannel channel, AsyncCallback callback, object state)
-                : base(callback, state)
-            {
-                this.channel = channel;
-                bool success = false;
-                try
-                {
-                    this.toSend = this.channel.AddLengthToBuffer(data);
-
-                    IAsyncResult sendResult = channel.BeginSocketSend(this.toSend, OnSend, this);
-                    if (!sendResult.CompletedSynchronously)
-                    {
-                        return;
-                    }
-
-                    if (CompleteSend(sendResult))
-                    {
-                        Cleanup();
-                        base.Complete(true);
-                    }
-
-                    success = true;
-                }
-                finally
-                {
-                    if (!success)
-                    {
-                        Cleanup();
-                    }
-                }
-            }
-
-            bool CompleteSend(IAsyncResult asyncResult)
-            {
-                this.channel.EndSocketSend(asyncResult);
-                return true;
-            }
-
-            static void OnSend(IAsyncResult result)
-            {
-                if (result.CompletedSynchronously)
-                {
-                    return;
-                }
-
-                WriteDataAsyncResult thisPtr = (WriteDataAsyncResult)result.AsyncState;
-                Exception completionException = null;
-                bool completeSelf = false;
-                try
-                {
-                    completeSelf = thisPtr.CompleteSend(result);
-                }
-                catch (Exception e)
-                {
-                    completeSelf = true;
-                    completionException = e;
-                }
-
-                if (completeSelf)
-                {
-                    thisPtr.Complete(false, completionException);
-                }
-            }
-
-            public void Cleanup()
-            {
-                if (this.toSend.Array != null)
-                {
-                    this.channel.bufferManager.ReturnBuffer(this.toSend.Array);
-                    this.toSend = default(ArraySegment<byte>);
-                }
-            }
-
-            public static void End(IAsyncResult result)
-            {
-                AsyncResult.End<WriteDataAsyncResult>(result);
             }
         }
 
@@ -848,6 +773,72 @@ namespace JsonRpcOverTcp.Channels
             public static void End(IAsyncResult result)
             {
                 AsyncResult.End<SendMessageAsyncResult>(result);
+            }
+        }
+
+        class ReceiveMessageAsyncResult : AsyncResult
+        {
+            SizedTcpBaseChannel channel;
+            Message message;
+
+            public ReceiveMessageAsyncResult(TimeSpan timeout, SizedTcpBaseChannel channel, AsyncCallback callback, object state)
+                : base(callback, state)
+            {
+                this.channel = channel;
+
+                if (!channel.IsDisposed)
+                {
+                    IAsyncResult readDataResult = channel.BeginReadData(OnReceiveData, this);
+                    if (!readDataResult.CompletedSynchronously)
+                    {
+                        return;
+                    }
+
+                    CompleteReceiveData(readDataResult);
+                }
+
+                base.Complete(true);
+            }
+
+            void CompleteReceiveData(IAsyncResult result)
+            {
+                try
+                {
+                    ArraySegment<byte> data = channel.EndReadData(result);
+                    this.message = channel.DecodeMessage(data);
+                }
+                catch (CommunicationException e)
+                {
+                    this.Complete(result.CompletedSynchronously, e);
+                }
+            }
+
+            static void OnReceiveData(IAsyncResult result)
+            {
+                if (result.CompletedSynchronously)
+                {
+                    return;
+                }
+
+                ReceiveMessageAsyncResult thisPtr = (ReceiveMessageAsyncResult)result.AsyncState;
+
+                Exception completionException = null;
+                try
+                {
+                    thisPtr.CompleteReceiveData(result);
+                }
+                catch (Exception e)
+                {
+                    completionException = e;
+                }
+
+                thisPtr.Complete(false, completionException);
+            }
+
+            public static Message End(IAsyncResult result)
+            {
+                ReceiveMessageAsyncResult thisPtr = AsyncResult.End<ReceiveMessageAsyncResult>(result);
+                return thisPtr.message;
             }
         }
     }

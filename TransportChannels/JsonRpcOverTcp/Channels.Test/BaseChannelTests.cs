@@ -8,15 +8,16 @@ using System.Collections;
 using System.Net.Sockets;
 using System.ServiceModel.Channels;
 using System.Threading;
+using System.ServiceModel;
 
 namespace JsonRpcOverTcp.Channels.Test
 {
-    public class SocketClientTests : IDisposable
+    public class BaseChannelTests : IDisposable
     {
         const int Port = 8000;
         SimpleEchoServer server;
 
-        public SocketClientTests()
+        public BaseChannelTests()
         {
             this.server = new SimpleEchoServer(Port);
             this.server.StartServing();
@@ -312,8 +313,6 @@ namespace JsonRpcOverTcp.Channels.Test
             Assert.True(success, "Error in callback");
             socket.Close();
         }
-
-        // Next up: AsyncSendMessageSyncReceiveMessage
 
         class ArrayComparer<T> : IEqualityComparer<T[]>
         {

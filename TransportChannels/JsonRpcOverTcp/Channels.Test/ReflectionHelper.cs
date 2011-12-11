@@ -24,8 +24,26 @@ namespace JsonRpcOverTcp.Channels.Test
 
         public static void SetField(object obj, string fieldName, object fieldValue)
         {
-            FieldInfo field = obj.GetType().GetField(fieldName, InstanceFlags);
+            FieldInfo field = FindField(obj.GetType(), fieldName);
             field.SetValue(obj, fieldValue);
+        }
+
+        public static object GetField(object obj, string fieldName)
+        {
+            FieldInfo field = FindField(obj.GetType(), fieldName);
+            return field.GetValue(obj);
+        }
+
+        static FieldInfo FindField(Type type, string fieldName)
+        {
+            FieldInfo field = null;
+            while (field == null && type != null)
+            {
+                field = type.GetField(fieldName, InstanceFlags);
+                type = type.BaseType;
+            }
+
+            return field;
         }
 
         static ConstructorInfo FindConstructor(Type type, object[] arguments)
