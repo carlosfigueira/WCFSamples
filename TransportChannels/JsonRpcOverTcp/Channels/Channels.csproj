@@ -47,7 +47,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SizedTcpBaseChannel.cs" />
     <Compile Include="SizedTcpChannelFactory.cs" />
+    <Compile Include="SizedTcpChannelListener.cs" />
+    <Compile Include="SizedTcpReplyChannel.cs" />
     <Compile Include="SizedTcpRequestChannel.cs" />
+    <Compile Include="SizedTcpRequestContext.cs" />
     <Compile Include="SizedTcpTransportBindingElement.cs" />
   </ItemGroup>
   <ItemGroup>

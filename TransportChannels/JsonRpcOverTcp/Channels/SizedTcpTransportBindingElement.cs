@@ -36,6 +36,16 @@ namespace JsonRpcOverTcp.Channels
             return (IChannelFactory<TChannel>)(object)new SizedTcpChannelFactory(this, context);
         }
 
+        public override bool CanBuildChannelListener<TChannel>(BindingContext context)
+        {
+            return typeof(TChannel) == typeof(IReplyChannel);
+        }
+
+        public override IChannelListener<TChannel> BuildChannelListener<TChannel>(BindingContext context)
+        {
+            return (IChannelListener<TChannel>)(object)new SizedTcpChannelListener(this, context);
+        }
+
         public override T GetProperty<T>(BindingContext context)
         {
             if (typeof(T) == typeof(MessageVersion))

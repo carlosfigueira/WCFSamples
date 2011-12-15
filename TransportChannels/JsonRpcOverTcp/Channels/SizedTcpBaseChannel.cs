@@ -194,11 +194,21 @@ namespace JsonRpcOverTcp.Channels
             }
         }
 
+        public void SendMessage(Message message)
+        {
+            this.SendMessage(message, this.DefaultSendTimeout);
+        }
+
         public IAsyncResult BeginSendMessage(Message message, TimeSpan timeout, AsyncCallback callback, object state)
         {
             base.ThrowIfDisposedOrNotOpen();
             ArraySegment<byte> encodedMessage = this.EncodeMessage(message);
             return this.BeginWriteData(encodedMessage, timeout, callback, state);
+        }
+
+        public IAsyncResult BeginSendMessage(Message message, AsyncCallback callback, object state)
+        {
+            return this.BeginSendMessage(message, this.DefaultSendTimeout, callback, state);
         }
 
         public void EndSendMessage(IAsyncResult result)
