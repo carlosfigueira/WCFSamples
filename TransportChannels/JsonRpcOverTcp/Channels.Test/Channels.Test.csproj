@@ -46,7 +46,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ReplyChannelTests.cs" />
     <Compile Include="RequestChannelTests.cs" />
     <Compile Include="Mocks.cs" />
     <Compile Include="ReflectionHelper.cs" />
