@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.ServiceModel;
-using System.ServiceModel.Channels;
-using System.Net.Sockets;
 using System.Collections.ObjectModel;
 using System.Net;
+using System.Net.Sockets;
+using System.ServiceModel.Channels;
 
 namespace JsonRpcOverTcp.Channels
 {
@@ -50,17 +46,26 @@ namespace JsonRpcOverTcp.Channels
 
         protected override IReplyChannel OnAcceptChannel(TimeSpan timeout)
         {
-            throw new NotImplementedException();
+            try
+            {
+                Socket dataSocket = listenSocket.Accept();
+                return new SizedTcpReplyChannel(this.encoderFactory.Encoder, this.bufferManager, this.uri, dataSocket, this);
+            }
+            catch (ObjectDisposedException)
+            {
+                // socket closed
+                return null;
+            }
         }
 
         protected override IAsyncResult OnBeginAcceptChannel(TimeSpan timeout, AsyncCallback callback, object state)
         {
-            throw new NotImplementedException();
+            return new AcceptChannelAsyncResult(timeout, this, callback, state);
         }
 
         protected override IReplyChannel OnEndAcceptChannel(IAsyncResult result)
         {
-            throw new NotImplementedException();
+            return AcceptChannelAsyncResult.End(result);
         }
 
         protected override IAsyncResult OnBeginWaitForChannel(TimeSpan timeout, AsyncCallback callback, object state)
@@ -85,37 +90,39 @@ namespace JsonRpcOverTcp.Channels
 
         protected override void OnAbort()
         {
-            throw new NotImplementedException();
+            this.CloseListenSocket(TimeSpan.Zero);
         }
 
         protected override IAsyncResult OnBeginClose(TimeSpan timeout, AsyncCallback callback, object state)
         {
-            throw new NotImplementedException();
+            this.CloseListenSocket(timeout);
+            return new CompletedAsyncResult(callback, state);
         }
 
         protected override IAsyncResult OnBeginOpen(TimeSpan timeout, AsyncCallback callback, object state)
         {
-            throw new NotImplementedException();
+            this.OpenListenSocket();
+            return new CompletedAsyncResult(callback, state);
         }
 
         protected override void OnClose(TimeSpan timeout)
         {
-            throw new NotImplementedException();
+            this.CloseListenSocket(timeout);
         }
 
         protected override void OnEndClose(IAsyncResult result)
         {
-            throw new NotImplementedException();
+            CompletedAsyncResult.End(result);
         }
 
         protected override void OnEndOpen(IAsyncResult result)
         {
-            throw new NotImplementedException();
+            CompletedAsyncResult.End(result);
         }
 
         protected override void OnOpen(TimeSpan timeout)
         {
-            throw new NotImplementedException();
+            this.OpenListenSocket();
         }
 
         void OpenListenSocket()
@@ -129,6 +136,84 @@ namespace JsonRpcOverTcp.Channels
         void CloseListenSocket(TimeSpan timeout)
         {
             this.listenSocket.Close((int)timeout.TotalMilliseconds);
+        }
+
+        class AcceptChannelAsyncResult : AsyncResult
+        {
+            TimeSpan timeout;
+            SizedTcpChannelListener listener;
+            IReplyChannel channel;
+
+            public AcceptChannelAsyncResult(TimeSpan timeout, SizedTcpChannelListener listener, AsyncCallback callback, object state)
+                : base(callback, state)
+            {
+                this.timeout = timeout;
+                this.listener = listener;
+
+                IAsyncResult acceptResult = listener.listenSocket.BeginAccept(OnAccept, this);
+                if (!acceptResult.CompletedSynchronously)
+                {
+                    return;
+                }
+
+                if (CompleteAccept(acceptResult))
+                {
+                    base.Complete(true);
+                }
+            }
+
+            bool CompleteAccept(IAsyncResult result)
+            {
+                try
+                {
+                    Socket dataSocket = this.listener.listenSocket.EndAccept(result);
+                    this.channel = new SizedTcpReplyChannel(
+                        this.listener.encoderFactory.Encoder,
+                        this.listener.bufferManager,
+                        this.listener.uri,
+                        dataSocket,
+                        this.listener);
+                }
+                catch (ObjectDisposedException)
+                {
+                    this.channel = null;
+                }
+
+                return true;
+            }
+
+            static void OnAccept(IAsyncResult result)
+            {
+                if (result.CompletedSynchronously)
+                {
+                    return;
+                }
+
+                AcceptChannelAsyncResult thisPtr = (AcceptChannelAsyncResult)result.AsyncState;
+
+                Exception completionException = null;
+                bool completeSelf = false;
+                try
+                {
+                    completeSelf = thisPtr.CompleteAccept(result);
+                }
+                catch (Exception e)
+                {
+                    completeSelf = true;
+                    completionException = e;
+                }
+
+                if (completeSelf)
+                {
+                    thisPtr.Complete(false, completionException);
+                }
+            }
+
+            public static IReplyChannel End(IAsyncResult result)
+            {
+                AcceptChannelAsyncResult thisPtr = AsyncResult.End<AcceptChannelAsyncResult>(result);
+                return thisPtr.channel;
+            }
         }
     }
 }
