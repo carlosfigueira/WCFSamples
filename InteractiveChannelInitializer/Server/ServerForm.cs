@@ -35,20 +35,20 @@ namespace Server
             }));
         }
 
-        private static BasicHttpBinding GetBinding()
-        {
-            BasicHttpBinding result = new BasicHttpBinding();
-            result.Security.Mode = BasicHttpSecurityMode.TransportCredentialOnly;
-            result.Security.Transport.ClientCredentialType = HttpClientCredentialType.Basic;
-            return result;
-        }
-
         private void btnStartServer_Click(object sender, EventArgs e)
         {
             this.CreateAndOpenHost();
             this.btnStartServer.Enabled = false;
             this.btnStopServer.Enabled = true;
             this.lblStatus.Text = "Listening at " + BaseAddress;
+        }
+
+        private static BasicHttpBinding GetBinding()
+        {
+            BasicHttpBinding result = new BasicHttpBinding();
+            result.Security.Mode = BasicHttpSecurityMode.TransportCredentialOnly;
+            result.Security.Transport.ClientCredentialType = HttpClientCredentialType.Basic;
+            return result;
         }
 
         private void CreateAndOpenHost()

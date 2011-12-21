@@ -16,7 +16,7 @@ namespace Server
         int Divide(int x, int y);
     }
 
-    [ServiceBehavior(UseSynchronizationContext = false, IncludeExceptionDetailInFaults = true)]
+    [ServiceBehavior(UseSynchronizationContext = false)]
     public class Service : ICalculator
     {
         public int Add(int x, int y)
