@@ -45,12 +45,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="JsonRpcClientMessageInspector.cs" />
+    <Compile Include="JsonRpcErrorHandler.cs" />
+    <Compile Include="JsonRpcMessageInspector.cs" />
     <Compile Include="JsonRpcConstants.cs" />
     <Compile Include="JsonRpcEndpointBehavior.cs" />
     <Compile Include="JsonRpcException.cs" />
     <Compile Include="JsonRpcHelpers.cs" />
     <Compile Include="JsonRpcMessageFormatter.cs" />
+    <Compile Include="JsonRpcOperationSelector.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

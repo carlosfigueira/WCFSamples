@@ -16,7 +16,7 @@ namespace JsonRpcOverTcp.ServiceModel
 
         public void ApplyClientBehavior(ServiceEndpoint endpoint, ClientRuntime clientRuntime)
         {
-            clientRuntime.MessageInspectors.Add(new JsonRpcClientMessageInspector());
+            clientRuntime.MessageInspectors.Add(new JsonRpcMessageInspector());
             foreach (OperationDescription operation in endpoint.Contract.Operations)
             {
                 if (!JsonRpcHelpers.IsUntypedMessage(operation))
@@ -31,6 +31,20 @@ namespace JsonRpcOverTcp.ServiceModel
 
         public void ApplyDispatchBehavior(ServiceEndpoint endpoint, EndpointDispatcher endpointDispatcher)
         {
+            endpointDispatcher.DispatchRuntime.MessageInspectors.Add(new JsonRpcMessageInspector());
+            endpointDispatcher.DispatchRuntime.OperationSelector = new JsonRpcOperationSelector();
+            endpointDispatcher.ChannelDispatcher.ErrorHandlers.Add(new JsonRpcErrorHandler());
+            endpointDispatcher.ContractFilter = new MatchAllMessageFilter();
+            foreach (OperationDescription operation in endpoint.Contract.Operations)
+            {
+                if (!JsonRpcHelpers.IsUntypedMessage(operation))
+                {
+                    DispatchOperation dispatchOperation = endpointDispatcher.DispatchRuntime.Operations[operation.Name];
+                    dispatchOperation.DeserializeRequest = true;
+                    dispatchOperation.SerializeReply = true;
+                    dispatchOperation.Formatter = new JsonRpcMessageFormatter(operation);
+                }
+            }
         }
 
         public void Validate(ServiceEndpoint endpoint)

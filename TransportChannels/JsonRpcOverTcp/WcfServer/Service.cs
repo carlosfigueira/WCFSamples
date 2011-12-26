@@ -56,7 +56,14 @@ namespace WcfServer
 
         public int Divide(int x, int y)
         {
-            return x / y;
+            try
+            {
+                return x / y;
+            }
+            catch (DivideByZeroException e)
+            {
+                throw new ArgumentException("Divide by zero", e);
+            }
         }
     }
 }

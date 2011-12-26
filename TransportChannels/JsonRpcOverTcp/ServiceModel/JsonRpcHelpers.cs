@@ -32,6 +32,22 @@ namespace JsonRpcOverTcp.ServiceModel
             }
         }
 
+        public static JObject GetJObjectPreservingMessage(ref Message message)
+        {
+            JObject json;
+            if (message.Properties.ContainsKey(JsonRpcConstants.JObjectMessageProperty))
+            {
+                json = (JObject)message.Properties[JsonRpcConstants.JObjectMessageProperty];
+            }
+            else
+            {
+                json = DeserializeMessage(message);
+                message = SerializeMessage(json, message);
+            }
+
+            return json;
+        }
+
         public static Message SerializeMessage(JObject json, Message previousMessage)
         {
             using (MemoryStream ms = new MemoryStream())

@@ -95,10 +95,14 @@ namespace JsonRpcOverTcp.Channels
         protected override Message DecodeMessage(ArraySegment<byte> data)
         {
             Message result = base.DecodeMessage(data);
-            result.Headers.To = this.localAddress;
-            IPEndPoint remoteEndpoint = (IPEndPoint)this.socket.RemoteEndPoint;
-            RemoteEndpointMessageProperty property = new RemoteEndpointMessageProperty(remoteEndpoint.Address.ToString(), remoteEndpoint.Port);
-            result.Properties.Add(RemoteEndpointMessageProperty.Name, property);
+            if (result != null)
+            {
+                result.Headers.To = this.localAddress;
+                IPEndPoint remoteEndpoint = (IPEndPoint)this.socket.RemoteEndPoint;
+                RemoteEndpointMessageProperty property = new RemoteEndpointMessageProperty(remoteEndpoint.Address.ToString(), remoteEndpoint.Port);
+                result.Properties.Add(RemoteEndpointMessageProperty.Name, property);
+            }
+
             return result;
         }
 
