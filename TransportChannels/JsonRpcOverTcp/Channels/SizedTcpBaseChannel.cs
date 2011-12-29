@@ -21,7 +21,7 @@ namespace JsonRpcOverTcp.Channels
             this.bufferManager = bufferManager;
         }
 
-        protected void InitializeSocket(Socket socket)
+        protected virtual void InitializeSocket(Socket socket)
         {
             if (this.socket != null)
             {
@@ -192,11 +192,6 @@ namespace JsonRpcOverTcp.Channels
                     this.bufferManager.ReturnBuffer(encodedBytes.Array);
                 }
             }
-        }
-
-        public void SendMessage(Message message)
-        {
-            this.SendMessage(message, this.DefaultSendTimeout);
         }
 
         public IAsyncResult BeginSendMessage(Message message, TimeSpan timeout, AsyncCallback callback, object state)

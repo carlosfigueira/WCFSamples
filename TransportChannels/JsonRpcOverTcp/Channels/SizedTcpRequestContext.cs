@@ -56,7 +56,7 @@ namespace JsonRpcOverTcp.Channels
 
         public override void Reply(Message message)
         {
-            this.replyChannel.SendMessage(message);
+            this.replyChannel.SendMessage(message, this.timeout);
         }
 
         public override Message RequestMessage
