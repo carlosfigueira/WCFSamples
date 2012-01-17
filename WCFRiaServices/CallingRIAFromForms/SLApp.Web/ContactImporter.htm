@@ -1,0 +1,40 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Invoking a WCF RIA Operation via HTML</title>
+    <script type="text/javascript" src="scripts/jquery-1.7.1.js"></script>
+    <script type="text/javascript" src="scripts/json2.js"></script>
+</head>
+<body>
+    <h1>Contact importer</h1>
+    <form action="SLApp-Web-ContactsDomainService.svc/JSON/ImportContact" method="post">
+        <p>Name: <input type="text" id="Name" name="Name" /></p>
+        <p>Age: <input type="text" id="Age" name="Age" /></p>
+        <p>Telephone: <input type="text" id="Telephone" name="Telephone" /></p>
+        <p><input type="button" value="Import Contact (using jQuery)" onclick="Call()" /></p>
+        <p><input type="submit" value="Import Contact (using plain HTML)" /></p>
+    </form>
+
+    <script type="text/javascript">
+        function Call() {
+            var data = {
+                Name: $("#Name").val(),
+                Age: parseInt($("#Age").val()),
+                Telephone: $("#Telephone").val()
+            };
+
+            var json = JSON.stringify({ contact: data });
+
+            $.ajax({
+                url: "SLApp-Web-ContactsDomainService.svc/JSON/ImportContact",
+                type: "POST",
+                contentType: "application/json",
+                data: json,
+                complete: function () {
+                    window.location = "SLAppTestPage.html";
+                }
+            });
+        }
+    </script>
+</body>
+</html>
