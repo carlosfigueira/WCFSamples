@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.Linq;
 using System.Reflection;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
@@ -7,6 +8,7 @@ using System.ServiceModel.Description;
 using System.ServiceModel.Dispatcher;
 using System.Text;
 using System.Threading;
+using System.Diagnostics;
 
 namespace AllExtensions
 {
@@ -271,6 +273,30 @@ namespace AllExtensions
         public string SelectOperation(MethodBase method, object[] parameters)
         {
             ColorConsole.WriteLine(ConsoleColor.Yellow, "{0}.{1}", this.GetType().Name, ReflectionUtil.GetMethodSignature(MethodBase.GetCurrentMethod()));
+            MethodInfo methodInfo = method as MethodInfo;
+            if (methodInfo != null)
+            {
+                if (methodInfo.ReturnType == typeof(IAsyncResult) && methodInfo.Name.StartsWith("Begin"))
+                {
+                    OperationContractAttribute oca = methodInfo
+                        .GetCustomAttributes(typeof(OperationContractAttribute), false)
+                        .FirstOrDefault()
+                        as OperationContractAttribute;
+                    if (oca != null && oca.AsyncPattern)
+                    {
+                        return method.Name.Substring("Begin".Length);
+                    }
+                }
+                else
+                {
+                    ParameterInfo[] methodParams = method.GetParameters();
+                    if (methodParams.Length == 1 && methodParams[0].ParameterType == typeof(IAsyncResult) && method.Name.StartsWith("End"))
+                    {
+                        return method.Name.Substring("End".Length);
+                    }
+                }
+            }
+
             return method.Name;
         }
     }
@@ -315,6 +341,9 @@ namespace AllExtensions
         int Add(int x, int y);
         [OperationContract(IsOneWay = true)]
         void Process(string text);
+        [OperationContract(AsyncPattern = true)]
+        IAsyncResult BeginEcho(string text, AsyncCallback callback, object state);
+        string EndEcho(IAsyncResult result);
     }
 
     [ServiceBehavior(IncludeExceptionDetailInFaults = true)]
@@ -337,6 +366,21 @@ namespace AllExtensions
         public void Process(string text)
         {
             ColorConsole.WriteLine(ConsoleColor.Green, "In service operation '{0}'", MethodBase.GetCurrentMethod().Name);
+        }
+
+        public IAsyncResult BeginEcho(string text, AsyncCallback callback, object state)
+        {
+            ColorConsole.WriteLine(ConsoleColor.Green, "In service operation '{0}'", MethodBase.GetCurrentMethod().Name);
+            Func<string, string> func = x => x;
+            return func.BeginInvoke(text, callback, state);
+        }
+
+        public string EndEcho(IAsyncResult result)
+        {
+            ColorConsole.WriteLine(ConsoleColor.Green, "In service operation '{0}'", MethodBase.GetCurrentMethod().Name);
+            Func<string, string> func = (Func<string, string>)
+                ((System.Runtime.Remoting.Messaging.AsyncResult)result).AsyncDelegate;
+            return func.EndInvoke(result);
         }
     }
 
@@ -471,6 +515,10 @@ namespace AllExtensions
                     ColorConsole.WriteLine("Calling operation");
                     ColorConsole.WriteLine(proxy.Add(3, 4));
 
+                    Console.WriteLine();
+                    Console.WriteLine("   *-*-*-*-*-*-*-*-*-*-*-*-*-*-*");
+                    Console.WriteLine();
+
                     ColorConsole.WriteLine("Called operation, calling it again, this time it the service will throw");
                     try
                     {
@@ -481,8 +529,27 @@ namespace AllExtensions
                         ColorConsole.WriteLine(ConsoleColor.Red, "{0}: {1}", e.GetType().Name, e.Message);
                     }
 
+                    Console.WriteLine();
+                    Console.WriteLine("   *-*-*-*-*-*-*-*-*-*-*-*-*-*-*");
+                    Console.WriteLine();
+
                     ColorConsole.WriteLine("Now calling an OneWay operation");
                     proxy.Process("hello");
+                    Thread.Sleep(5000);
+
+                    Console.WriteLine();
+                    Console.WriteLine("   *-*-*-*-*-*-*-*-*-*-*-*-*-*-*");
+                    Console.WriteLine();
+
+                    ManualResetEvent evt = new ManualResetEvent(false);
+                    ColorConsole.WriteLine("Now calling an asynchronous operation");
+                    proxy.BeginEcho("hello", delegate(IAsyncResult ar)
+                    {
+                        Console.WriteLine(proxy.EndEcho(ar));
+                        evt.Set();
+                    }, null);
+
+                    evt.WaitOne();
 
                     ((IClientChannel)proxy).Close();
                 }
