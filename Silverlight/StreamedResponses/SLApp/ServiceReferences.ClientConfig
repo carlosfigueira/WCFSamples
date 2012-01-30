@@ -1,0 +1,26 @@
+﻿<configuration>
+    <system.serviceModel>
+        <bindings>
+            <customBinding>
+              <binding name="CustomBinding_IWcfDownloadService">
+                <binaryMessageEncoding />
+                <httpTransport maxReceivedMessageSize="2147483647" maxBufferSize="2147483647" />
+              </binding>
+              <binding name="CustomBinding_IWcfDownloadService_StreamedResponse">
+                <binaryMessageEncoding />
+                <httpTransport maxReceivedMessageSize="2147483647" 
+                               maxBufferSize="2147483647" 
+                               transferMode="StreamedResponse" />
+              </binding>
+            </customBinding>
+        </bindings>
+        <client>
+          <endpoint address="http://localhost:9160/WcfDownloadService.svc"
+              binding="customBinding" bindingConfiguration="CustomBinding_IWcfDownloadService"
+              contract="ServiceReference1.IWcfDownloadService" name="CustomBinding_IWcfDownloadService" />
+          <endpoint address="http://localhost:9160/WcfDownloadService.svc"
+              binding="customBinding" bindingConfiguration="CustomBinding_IWcfDownloadService_StreamedResponse"
+              contract="SLApp.Web.IWcfDownloadService" name="CustomBinding_IWcfDownloadService_StreamedResponse" />
+        </client>
+    </system.serviceModel>
+</configuration>

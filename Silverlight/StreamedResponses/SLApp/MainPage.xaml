@@ -1,0 +1,27 @@
+﻿<UserControl x:Class="SLApp.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    d:DesignHeight="300" d:DesignWidth="400">
+
+    <Grid x:Name="LayoutRoot" Background="White">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Button x:Name="btnStart" Content="Click Me (byte[])" Margin="5"
+                Grid.Row="0" Grid.Column="0"
+                Click="btnStart_Click" />
+        <Button x:Name="btnStartStreaming" Content="Click Me ('real streaming')" Margin="5"
+                Grid.Row="0" Grid.Column="1"
+                Click="btnStartStreaming_Click" />
+        <TextBox AcceptsReturn="True" Margin="5" x:Name="txtDebug"
+                 Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" />
+    </Grid>
+</UserControl>

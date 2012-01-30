@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReferenceGroup xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" ID="b0a92d9a-4db0-4d84-b6aa-11b3aa806970" xmlns="urn:schemas-microsoft-com:xml-wcfservicemap">
+  <ClientOptions>
+    <GenerateAsynchronousMethods>true</GenerateAsynchronousMethods>
+    <EnableDataBinding>true</EnableDataBinding>
+    <ExcludedTypes />
+    <ImportXmlTypes>false</ImportXmlTypes>
+    <GenerateInternalTypes>false</GenerateInternalTypes>
+    <GenerateMessageContracts>false</GenerateMessageContracts>
+    <NamespaceMappings />
+    <CollectionMappings>
+      <CollectionMapping TypeName="System.Collections.ObjectModel.ObservableCollection`1" Category="List" />
+    </CollectionMappings>
+    <GenerateSerializableTypes>false</GenerateSerializableTypes>
+    <Serializer>Auto</Serializer>
+    <UseSerializerForFaults>true</UseSerializerForFaults>
+    <ReferenceAllAssemblies>true</ReferenceAllAssemblies>
+    <ReferencedAssemblies />
+    <ReferencedDataContractTypes />
+    <ServiceContractMappings />
+  </ClientOptions>
+  <MetadataSources>
+    <MetadataSource Address="http://localhost:9160/WcfDownloadService.svc" Protocol="http" SourceId="1" />
+  </MetadataSources>
+  <Metadata>
+    <MetadataFile FileName="WcfDownloadService.wsdl" MetadataType="Wsdl" ID="38eb5871-0852-41ed-8b4a-e3de025227f7" SourceId="1" SourceUrl="http://localhost:9160/WcfDownloadService.svc?wsdl=wsdl0" />
+    <MetadataFile FileName="WcfDownloadService.xsd" MetadataType="Schema" ID="c59ca762-1f44-482b-9542-302110312ca5" SourceId="1" SourceUrl="http://localhost:9160/WcfDownloadService.svc?xsd=xsd1" />
+    <MetadataFile FileName="WcfDownloadService.disco" MetadataType="Disco" ID="703a95e5-b1d8-4a47-bc82-87a998620fdc" SourceId="1" SourceUrl="http://localhost:9160/WcfDownloadService.svc?disco" />
+    <MetadataFile FileName="WcfDownloadService1.xsd" MetadataType="Schema" ID="0dfe7fc7-9949-476d-82ac-95f3f9fa0762" SourceId="1" SourceUrl="http://localhost:9160/WcfDownloadService.svc?xsd=xsd2" />
+    <MetadataFile FileName="WcfDownloadService1.wsdl" MetadataType="Wsdl" ID="ec3868b7-8616-46ba-8963-c5e7fc31407f" SourceId="1" SourceUrl="http://localhost:9160/WcfDownloadService.svc?wsdl" />
+    <MetadataFile FileName="WcfDownloadService2.xsd" MetadataType="Schema" ID="6eb6e95c-c003-4150-9ae0-193ff1d5104a" SourceId="1" SourceUrl="http://localhost:9160/WcfDownloadService.svc?xsd=xsd0" />
+  </Metadata>
+  <Extensions>
+    <ExtensionFile FileName="configuration91.svcinfo" Name="configuration91.svcinfo" />
+    <ExtensionFile FileName="configuration.svcinfo" Name="configuration.svcinfo" />
+  </Extensions>
+</ReferenceGroup>
