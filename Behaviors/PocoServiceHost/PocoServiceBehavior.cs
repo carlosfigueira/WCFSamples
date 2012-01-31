@@ -145,12 +145,6 @@ namespace PocoServiceHost
                 endpointDispatcher.DispatchRuntime.Operations.Add(operationDispatcher);
             }
 
-            endpointDispatcher.DispatchRuntime.InstanceProvider = new SimpleInstanceProvider(serviceType);
-            endpointDispatcher.DispatchRuntime.InstanceContextProvider = new SimpleInstanceContextProvider();
-            endpointDispatcher.AddressFilter = new EndpointAddressMessageFilter(endpoint.Address);
-            endpointDispatcher.ContractFilter = new ActionMessageFilter(endpoint.Contract.Operations.Select(op => op.Messages[0].Action).ToArray());
-            endpointDispatcher.FilterPriority = 1;
-
             channelDispatcher.Endpoints.Add(endpointDispatcher);
             return channelDispatcher;
         }
@@ -204,55 +198,6 @@ namespace PocoServiceHost
             }
 
             public void Validate(OperationDescription operationDescription)
-            {
-            }
-        }
-        
-        // This provider implements a "PerCall" instance mode - a new instance of the service class is used
-        // for each incoming message. Changing the provider (to implement a singleton pattern, for example)
-        // is simple. More information later on the post about IInstanceProvider.
-        class SimpleInstanceProvider : IInstanceProvider
-        {
-            Type serviceType;
-            public SimpleInstanceProvider(Type serviceType)
-            {
-                this.serviceType = serviceType;
-            }
-
-            public object GetInstance(InstanceContext instanceContext, Message message)
-            {
-                return Activator.CreateInstance(this.serviceType);
-            }
-
-            public object GetInstance(InstanceContext instanceContext)
-            {
-                return Activator.CreateInstance(this.serviceType);
-            }
-
-            public void ReleaseInstance(InstanceContext instanceContext, object instance)
-            {
-            }
-        }
-
-        // This provider simply requests that WCF creates a new instance context for each incoming
-        // message. More information later on the post about IInstanceContextProvider.
-        class SimpleInstanceContextProvider : IInstanceContextProvider
-        {
-            public InstanceContext GetExistingInstanceContext(Message message, IContextChannel channel)
-            {
-                return null;
-            }
-
-            public void InitializeInstanceContext(InstanceContext instanceContext, Message message, IContextChannel channel)
-            {
-            }
-
-            public bool IsIdle(InstanceContext instanceContext)
-            {
-                return true;
-            }
-
-            public void NotifyIdle(InstanceContextIdleCallback callback, InstanceContext instanceContext)
             {
             }
         }

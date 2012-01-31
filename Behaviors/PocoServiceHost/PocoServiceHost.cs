@@ -13,7 +13,7 @@ namespace PocoServiceHost
 
         protected override void InitializeRuntime()
         {
-            this.Description.Behaviors.Add(new PocoServiceBehavior());
+            this.Description.Behaviors.Insert(0, new PocoServiceBehavior());
             this.Description.Behaviors.Add(new ServiceMetadataBehavior { HttpGetEnabled = true });
             base.InitializeRuntime();
         }
