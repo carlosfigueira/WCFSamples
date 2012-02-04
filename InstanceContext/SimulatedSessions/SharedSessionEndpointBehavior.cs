@@ -2,7 +2,7 @@
 using System.ServiceModel.Description;
 using System.ServiceModel.Dispatcher;
 
-namespace SharedSessions.Server
+namespace SimulatedSessions
 {
     class SharedSessionEndpointBehavior : IEndpointBehavior
     {

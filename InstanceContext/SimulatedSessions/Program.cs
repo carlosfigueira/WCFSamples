@@ -4,7 +4,7 @@ using System.ServiceModel.Channels;
 using System.ServiceModel.Description;
 using System.Threading;
 
-namespace SharedSessions.Server
+namespace SimulatedSessions
 {
     class Program
     {

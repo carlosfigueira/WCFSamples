@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ServiceModel;
 using System.Text;
 
-namespace SharedSessions.Server
+namespace SimulatedSessions
 {
     public static class Constants
     {

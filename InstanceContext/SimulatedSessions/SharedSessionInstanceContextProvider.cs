@@ -5,7 +5,7 @@ using System.ServiceModel.Channels;
 using System.ServiceModel.Dispatcher;
 using System.Threading;
 
-namespace SharedSessions.Server
+namespace SimulatedSessions
 {
     class SharedSessionInstanceContextProvider : IInstanceContextProvider, IDispatchMessageInspector
     {

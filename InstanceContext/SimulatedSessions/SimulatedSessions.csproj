@@ -5,11 +5,11 @@
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{A1346194-F761-45F7-8005-6A6AA7383FDE}</ProjectGuid>
+    <ProjectGuid>{2AB31B55-A7A2-4325-9AFC-50EB097C6784}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>SharedSessions.Server</RootNamespace>
-    <AssemblyName>SharedSessions.Server</AssemblyName>
+    <RootNamespace>SimulatedSessions</RootNamespace>
+    <AssemblyName>SimulatedSessions</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
@@ -47,10 +47,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Contracts.cs" />
-    <Compile Include="SharedSessionInstanceContextProvider.cs" />
-    <Compile Include="SharedSessionEndpointBehavior.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SharedSessionEndpointBehavior.cs" />
+    <Compile Include="SharedSessionInstanceContextProvider.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
