@@ -11,7 +11,7 @@ namespace GlobAwareService
     {
         public static IResourceStrings GetResources()
         {
-            switch (Thread.CurrentThread.CurrentUICulture.TwoLetterISOLanguageName)
+            switch (Thread.CurrentThread.CurrentCulture.TwoLetterISOLanguageName)
             {
                 case "es":
                     return new SpanishStrings();

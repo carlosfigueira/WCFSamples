@@ -14,7 +14,7 @@ namespace GlobAwareService
             CultureInfo culture = correlationState as CultureInfo;
             if (culture != null)
             {
-                Thread.CurrentThread.CurrentUICulture = culture;
+                Thread.CurrentThread.CurrentCulture = culture;
             }
         }
 
@@ -31,8 +31,8 @@ namespace GlobAwareService
                 if (!string.IsNullOrEmpty(acceptLanguage))
                 {
                     requestCulture = new CultureInfo(acceptLanguage);
-                    correlationState = Thread.CurrentThread.CurrentUICulture;
-                    Thread.CurrentThread.CurrentUICulture = requestCulture;
+                    correlationState = Thread.CurrentThread.CurrentCulture;
+                    Thread.CurrentThread.CurrentCulture = requestCulture;
                 }
             }
 
