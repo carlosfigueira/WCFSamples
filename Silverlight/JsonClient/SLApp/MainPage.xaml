@@ -1,0 +1,50 @@
+﻿<UserControl x:Class="SLApp.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    d:DesignHeight="400" d:DesignWidth="600">
+
+    <Grid x:Name="LayoutRoot" Background="White">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        
+        <TextBlock Grid.Row="0" Text="REST/Json Client" Margin="5" FontSize="24" />
+        <StackPanel Grid.Row="1" Orientation="Vertical" Margin="5">
+            <StackPanel Orientation="Horizontal" Margin="5">
+                <TextBlock Text="x:" Margin="5" />
+                <TextBox x:Name="txtX" Text="" Width="70" Margin="5" />
+                <TextBlock Text="y:" Margin="5" />
+                <TextBox x:Name="txtY" Text="" Width="70" Margin="5" />
+                <Button x:Name="btnAddJson" Content="Add (JSON)" Margin="5" Click="btnAddJson_Click" />
+                <Button x:Name="btnAddXml" Content="Add (XML)" Margin="5" Click="btnAddXml_Click"/>
+                <Button x:Name="btnSubtractJson" Content="Subtract (JSON)" Margin="5" Click="btnSubtractJson_Click"/>
+                <Button x:Name="btnSubtractXml" Content="Subtract (XML)" Margin="5" Click="btnSubtractXml_Click"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="5">
+                <TextBlock Text="Text:" Margin="5" />
+                <TextBox x:Name="txtTextInput" Text="" Width="200" Margin="5" />
+                <Button x:Name="btnReverseText" Margin="5" Content="Reverse Text" Click="btnReverseText_Click" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="5">
+                <TextBlock Text="Name:" Margin="5" />
+                <TextBox x:Name="txtName" Text="" Width="150" Margin="5" />
+                <TextBlock Text="Age:" Margin="5" />
+                <TextBox x:Name="txtAge" Text="" Width="50" Margin="5" />
+                <Button x:Name="btnCreatePerson" Margin="5" Content="Create Person" Click="btnCreatePerson_Click" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="5">
+                <TextBlock Text="Number Of Items:" Margin="5" />
+                <TextBox x:Name="txtNumberOfItems" Text="" Width="50" Margin="5" />
+                <Button x:Name="btnCreateOrder" Margin="5" Content="Create Order" Click="btnCreateOrder_Click" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="5">
+                <TextBlock Text="Result:" Margin="5" />
+                <TextBox x:Name="txtResult" Text="" Width="200" Margin="5" />
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</UserControl>
