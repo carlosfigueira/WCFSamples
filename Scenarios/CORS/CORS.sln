@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CorsEnabledService", "CorsEnabledService\CorsEnabledService.csproj", "{E37581A8-6A34-4EFF-B82A-9CE85B6F8571}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MashupApp", "MashupApp\MashupApp.csproj", "{8C0F330C-89F9-4CAD-B94C-45F32CE5374E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E37581A8-6A34-4EFF-B82A-9CE85B6F8571}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E37581A8-6A34-4EFF-B82A-9CE85B6F8571}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E37581A8-6A34-4EFF-B82A-9CE85B6F8571}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E37581A8-6A34-4EFF-B82A-9CE85B6F8571}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8C0F330C-89F9-4CAD-B94C-45F32CE5374E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C0F330C-89F9-4CAD-B94C-45F32CE5374E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C0F330C-89F9-4CAD-B94C-45F32CE5374E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C0F330C-89F9-4CAD-B94C-45F32CE5374E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

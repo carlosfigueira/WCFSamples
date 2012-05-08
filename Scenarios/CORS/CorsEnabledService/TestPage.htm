@@ -1,0 +1,103 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Values service - test page</title>
+    <script type="text/javascript" src="scripts/jquery-1.7.2.js"></script>
+</head>
+<body>
+    <h1>Values service - test page</h1>
+    <p>Id: <input type="text" id="id" /></p> 
+    <p>Value: <input type="text" id="value" /></p> 
+    <p> 
+        <input type="button" id="getAll" value="Get All" /> 
+        <input type="button" id="getOne" value="Get One" /> 
+        <input type="button" id="post" value="Add" /> 
+        <input type="button" id="put" value="Update" /> 
+        <input type="button" id="delete" value="Delete" /> 
+    </p> 
+    <div id='result'></div> 
+    <script type="text/javascript">
+        var valuesAddress = "http://localhost:44665/api/Values";
+        $("#getAll").click(function () {
+            $.ajax({
+                url: valuesAddress,
+                type: "GET",
+                success: function (result) {
+                    var text = "";
+                    for (var i = 0; i < result.length; i++) {
+                        if (i > 0) text = text + ", ";
+                        text = text + result[i];
+                    }
+
+                    $("#result").text(text);
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    $("#result").text(textStatus);
+                }
+            });
+        });
+
+        $("#getOne").click(function () {
+            var id = "/" + $("#id").val();
+            $.ajax({
+                url: valuesAddress + id,
+                type: "GET",
+                success: function (result) {
+                    $("#result").text(result);
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    $("#result").text(textStatus);
+                }
+            });
+        });
+
+        $("#post").click(function () {
+            var data = "\"" + $("#value").val() + "\"";
+            $.ajax({
+                url: valuesAddress,
+                type: "POST",
+                contentType: "application/json",
+                data: data,
+                success: function (result) {
+                    $("#result").text(result);
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    $("#result").text(textStatus);
+                }
+            });
+        });
+
+        $("#put").click(function () {
+            var id = "/" + $("#id").val();
+            var data = "\"" + $("#value").val() + "\"";
+            $.ajax({
+                url: valuesAddress + id,
+                type: "PUT",
+                contentType: "application/json",
+                data: data,
+                success: function (result) {
+                    $("#result").text(result);
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    $("#result").text(textStatus);
+                }
+            });
+        });
+
+        $("#delete").click(function () {
+            var id = "/" + $("#id").val();
+            $.ajax({
+                url: valuesAddress + id,
+                type: "DELETE",
+                success: function (result) {
+                    $("#result").text(result);
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    $("#result").text(textStatus);
+                }
+            });
+        }); 
+    </script> 
+
+</body>
+</html>
