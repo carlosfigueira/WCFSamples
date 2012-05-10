@@ -11,11 +11,11 @@ namespace CorsEnabledService
     [ServiceContract]
     public interface IValues
     {
-        [WebGet(UriTemplate = "values", ResponseFormat = WebMessageFormat.Json)]
+        [WebGet(UriTemplate = "values", ResponseFormat = WebMessageFormat.Json), CorsEnabled]
         List<string> GetValues();
-        [WebGet(UriTemplate = "values/{id}", ResponseFormat = WebMessageFormat.Json)]
+        [WebGet(UriTemplate = "values/{id}", ResponseFormat = WebMessageFormat.Json), CorsEnabled]
         string GetValue(string id);
-        [WebInvoke(UriTemplate = "/values", Method = "POST", ResponseFormat = WebMessageFormat.Json)]
+        [WebInvoke(UriTemplate = "/values", Method = "POST", ResponseFormat = WebMessageFormat.Json), CorsEnabled]
         void AddValue(string value);
         [WebInvoke(UriTemplate = "/values/{id}", Method = "DELETE", ResponseFormat = WebMessageFormat.Json)]
         void DeleteValue(string id);

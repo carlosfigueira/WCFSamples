@@ -14,7 +14,7 @@ namespace CorsEnabledService
 
         protected void Application_Start(object sender, EventArgs e)
         {
-            RouteTable.Routes.Add(new ServiceRoute("api", new WebServiceHostFactory(), typeof(ValuesService)));
+            RouteTable.Routes.Add(new ServiceRoute("api", new CorsEnabledServiceHostFactory(), typeof(ValuesService)));
         }
 
         protected void Session_Start(object sender, EventArgs e)
