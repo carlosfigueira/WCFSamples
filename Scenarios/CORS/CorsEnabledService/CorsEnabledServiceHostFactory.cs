@@ -71,6 +71,8 @@ namespace CorsEnabledService
 
         private void AddPreflightOperationSelectors(ServiceEndpoint endpoint, List<OperationDescription> corsOperations)
         {
+            Dictionary<string, PreflightOperationBehavior> uriTemplates = new Dictionary<string, PreflightOperationBehavior>(StringComparer.OrdinalIgnoreCase);
+
             foreach (var operation in corsOperations)
             {
                 if (operation.Behaviors.Find<WebGetAttribute>() != null)
@@ -85,53 +87,65 @@ namespace CorsEnabledService
                     continue;
                 }
 
-                ContractDescription contract = operation.DeclaringContract;
-                OperationDescription preflightOperation = new OperationDescription(operation.Name + CorsConstants.PreflightSuffix, contract);
-                MessageDescription inputMessage = new MessageDescription(operation.Messages[0].Action + CorsConstants.PreflightSuffix, MessageDirection.Input);
-                inputMessage.Body.Parts.Add(new MessagePartDescription("input", contract.Namespace) { Index = 0, Type = typeof(Message) });
-                preflightOperation.Messages.Add(inputMessage);
-                MessageDescription outputMessage = new MessageDescription(operation.Messages[1].Action + CorsConstants.PreflightSuffix, MessageDirection.Output);
-                outputMessage.Body.ReturnValue = new MessagePartDescription(preflightOperation.Name + "Return", contract.Namespace) { Type = typeof(Message) };
-                preflightOperation.Messages.Add(outputMessage);
+                string originalUriTemplate;
 
                 WebInvokeAttribute originalWia = operation.Behaviors.Find<WebInvokeAttribute>();
-                WebInvokeAttribute wia = new WebInvokeAttribute();
-
-                if (originalWia != null)
+                if (originalWia != null && originalWia.UriTemplate != null)
                 {
-                    if (originalWia.IsBodyStyleSetExplicitly)
+                    originalUriTemplate = originalWia.UriTemplate;
+                    int queryIndex = originalUriTemplate.IndexOf('?');
+                    if (queryIndex >= 0)
                     {
-                        wia.BodyStyle = originalWia.BodyStyle;
+                        // no query string used for this
+                        originalUriTemplate = originalUriTemplate.Substring(0, queryIndex);
                     }
 
-                    if (originalWia.IsRequestFormatSetExplicitly)
+                    int paramIndex;
+                    while ((paramIndex = originalUriTemplate.IndexOf('{')) >= 0)
                     {
-                        wia.RequestFormat = originalWia.RequestFormat;
-                    }
-
-                    if (originalWia.IsResponseFormatSetExplicitly)
-                    {
-                        wia.ResponseFormat = originalWia.ResponseFormat;
-                    }
-
-                    if (originalWia.UriTemplate != null)
-                    {
-                        wia.UriTemplate = originalWia.UriTemplate;
+                        // Replacing all named parameters with wildcards
+                        int endParamIndex = originalUriTemplate.IndexOf('}', paramIndex);
+                        if (endParamIndex >= 0)
+                        {
+                            originalUriTemplate = originalUriTemplate.Substring(0, paramIndex) + '*' + originalUriTemplate.Substring(endParamIndex + 1);
+                        }
                     }
                 }
-
-                if (wia.UriTemplate == null)
+                else
                 {
-                    wia.UriTemplate = operation.Name;
+                    originalUriTemplate = operation.Name;
                 }
 
-                wia.Method = "OPTIONS";
+                if (uriTemplates.ContainsKey(originalUriTemplate))
+                {
+                    // there is already an OPTIONS operation for this URI, we can reuse it
+                    PreflightOperationBehavior operationBehavior = uriTemplates[originalUriTemplate];
+                    operationBehavior.AddAllowedMethod(originalWia.Method ?? "POST");
+                }
+                else
+                {
+                    ContractDescription contract = operation.DeclaringContract;
+                    OperationDescription preflightOperation = new OperationDescription(operation.Name + CorsConstants.PreflightSuffix, contract);
+                    MessageDescription inputMessage = new MessageDescription(operation.Messages[0].Action + CorsConstants.PreflightSuffix, MessageDirection.Input);
+                    inputMessage.Body.Parts.Add(new MessagePartDescription("input", contract.Namespace) { Index = 0, Type = typeof(Message) });
+                    preflightOperation.Messages.Add(inputMessage);
+                    MessageDescription outputMessage = new MessageDescription(operation.Messages[1].Action + CorsConstants.PreflightSuffix, MessageDirection.Output);
+                    outputMessage.Body.ReturnValue = new MessagePartDescription(preflightOperation.Name + "Return", contract.Namespace) { Type = typeof(Message) };
+                    preflightOperation.Messages.Add(outputMessage);
 
-                preflightOperation.Behaviors.Add(wia);
-                preflightOperation.Behaviors.Add(new DataContractSerializerOperationBehavior(preflightOperation));
-                preflightOperation.Behaviors.Add(new PreflightOperationBehavior(preflightOperation));
+                    WebInvokeAttribute wia = new WebInvokeAttribute();
+                    wia.UriTemplate = originalUriTemplate;
+                    wia.Method = "OPTIONS";
 
-                contract.Operations.Add(preflightOperation);
+                    preflightOperation.Behaviors.Add(wia);
+                    preflightOperation.Behaviors.Add(new DataContractSerializerOperationBehavior(preflightOperation));
+                    PreflightOperationBehavior preflightOperationBehavior = new PreflightOperationBehavior(preflightOperation);
+                    preflightOperationBehavior.AddAllowedMethod(originalWia.Method ?? "POST");
+                    preflightOperation.Behaviors.Add(preflightOperationBehavior);
+                    uriTemplates.Add(originalUriTemplate, preflightOperationBehavior);
+
+                    contract.Operations.Add(preflightOperation);
+                }
             }
         }
     }

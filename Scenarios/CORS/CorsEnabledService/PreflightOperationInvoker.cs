@@ -2,15 +2,19 @@
 using System.Net;
 using System.ServiceModel.Channels;
 using System.ServiceModel.Dispatcher;
+using System.Collections.Generic;
 
 namespace CorsEnabledService
 {
     class PreflightOperationInvoker : IOperationInvoker
     {
         private string replyAction;
-        public PreflightOperationInvoker(string replyAction)
+        List<string> allowedHttpMethods;
+        
+        public PreflightOperationInvoker(string replyAction, List<string> allowedHttpMethods)
         {
             this.replyAction = replyAction;
+            this.allowedHttpMethods = allowedHttpMethods;
         }
 
         public object[] AllocateInputs()
@@ -58,9 +62,9 @@ namespace CorsEnabledService
                 httpResponse.Headers.Add(CorsConstants.AccessControlAllowOrigin, origin);
             }
 
-            if (requestMethod != null)
+            if (requestMethod != null && this.allowedHttpMethods.Contains(requestMethod))
             {
-                httpResponse.Headers.Add(CorsConstants.AccessControlAllowMethods, requestMethod);
+                httpResponse.Headers.Add(CorsConstants.AccessControlAllowMethods, string.Join(",", this.allowedHttpMethods));
             }
 
             if (requestHeaders != null)

@@ -17,9 +17,9 @@ namespace CorsEnabledService
         string GetValue(string id);
         [WebInvoke(UriTemplate = "/values", Method = "POST", ResponseFormat = WebMessageFormat.Json), CorsEnabled]
         void AddValue(string value);
-        [WebInvoke(UriTemplate = "/values/{id}", Method = "DELETE", ResponseFormat = WebMessageFormat.Json)]
+        [WebInvoke(UriTemplate = "/values/{id}", Method = "DELETE", ResponseFormat = WebMessageFormat.Json), CorsEnabled]
         void DeleteValue(string id);
-        [WebInvoke(UriTemplate = "/values/{id}", Method = "PUT", ResponseFormat = WebMessageFormat.Json)]
+        [WebInvoke(UriTemplate = "/values/{id}", Method = "PUT", ResponseFormat = WebMessageFormat.Json), CorsEnabled]
         string UpdateValue(string id, string value);
     }
 }
