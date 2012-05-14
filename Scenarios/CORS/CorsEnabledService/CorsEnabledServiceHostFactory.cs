@@ -34,7 +34,7 @@ namespace CorsEnabledService
                 .Where(o => o.Behaviors.Find<CorsEnabledAttribute>() != null)
                 .ToList();
 
-            AddPreflightOperationSelectors(endpoint, corsEnabledOperations);
+            AddPreflightOperations(endpoint, corsEnabledOperations);
 
             endpoint.Behaviors.Add(new WebHttpBehavior());
             endpoint.Behaviors.Add(new EnableCorsEndpointBehavior());
@@ -69,7 +69,7 @@ namespace CorsEnabledService
             return Attribute.IsDefined(type, typeof(ServiceContractAttribute), false);
         }
 
-        private void AddPreflightOperationSelectors(ServiceEndpoint endpoint, List<OperationDescription> corsOperations)
+        private void AddPreflightOperations(ServiceEndpoint endpoint, List<OperationDescription> corsOperations)
         {
             Dictionary<string, PreflightOperationBehavior> uriTemplates = new Dictionary<string, PreflightOperationBehavior>(StringComparer.OrdinalIgnoreCase);
 
@@ -88,39 +88,24 @@ namespace CorsEnabledService
                 }
 
                 string originalUriTemplate;
-
                 WebInvokeAttribute originalWia = operation.Behaviors.Find<WebInvokeAttribute>();
+
                 if (originalWia != null && originalWia.UriTemplate != null)
                 {
-                    originalUriTemplate = originalWia.UriTemplate;
-                    int queryIndex = originalUriTemplate.IndexOf('?');
-                    if (queryIndex >= 0)
-                    {
-                        // no query string used for this
-                        originalUriTemplate = originalUriTemplate.Substring(0, queryIndex);
-                    }
-
-                    int paramIndex;
-                    while ((paramIndex = originalUriTemplate.IndexOf('{')) >= 0)
-                    {
-                        // Replacing all named parameters with wildcards
-                        int endParamIndex = originalUriTemplate.IndexOf('}', paramIndex);
-                        if (endParamIndex >= 0)
-                        {
-                            originalUriTemplate = originalUriTemplate.Substring(0, paramIndex) + '*' + originalUriTemplate.Substring(endParamIndex + 1);
-                        }
-                    }
+                    originalUriTemplate = NormalizeTemplate(originalWia.UriTemplate);
                 }
                 else
                 {
                     originalUriTemplate = operation.Name;
                 }
 
+                string originalMethod = originalWia != null && originalWia.Method != null ? originalWia.Method : "POST";
+
                 if (uriTemplates.ContainsKey(originalUriTemplate))
                 {
                     // there is already an OPTIONS operation for this URI, we can reuse it
                     PreflightOperationBehavior operationBehavior = uriTemplates[originalUriTemplate];
-                    operationBehavior.AddAllowedMethod(originalWia.Method ?? "POST");
+                    operationBehavior.AddAllowedMethod(originalMethod);
                 }
                 else
                 {
@@ -140,13 +125,36 @@ namespace CorsEnabledService
                     preflightOperation.Behaviors.Add(wia);
                     preflightOperation.Behaviors.Add(new DataContractSerializerOperationBehavior(preflightOperation));
                     PreflightOperationBehavior preflightOperationBehavior = new PreflightOperationBehavior(preflightOperation);
-                    preflightOperationBehavior.AddAllowedMethod(originalWia.Method ?? "POST");
+                    preflightOperationBehavior.AddAllowedMethod(originalMethod);
                     preflightOperation.Behaviors.Add(preflightOperationBehavior);
                     uriTemplates.Add(originalUriTemplate, preflightOperationBehavior);
 
                     contract.Operations.Add(preflightOperation);
                 }
             }
+        }
+
+        private string NormalizeTemplate(string uriTemplate)
+        {
+            int queryIndex = uriTemplate.IndexOf('?');
+            if (queryIndex >= 0)
+            {
+                // no query string used for this
+                uriTemplate = uriTemplate.Substring(0, queryIndex);
+            }
+
+            int paramIndex;
+            while ((paramIndex = uriTemplate.IndexOf('{')) >= 0)
+            {
+                // Replacing all named parameters with wildcards
+                int endParamIndex = uriTemplate.IndexOf('}', paramIndex);
+                if (endParamIndex >= 0)
+                {
+                    uriTemplate = uriTemplate.Substring(0, paramIndex) + '*' + uriTemplate.Substring(endParamIndex + 1);
+                }
+            }
+
+            return uriTemplate;
         }
     }
 }
