@@ -75,15 +75,9 @@ namespace CorsEnabledService
 
             foreach (var operation in corsOperations)
             {
-                if (operation.Behaviors.Find<WebGetAttribute>() != null)
+                if (operation.Behaviors.Find<WebGetAttribute>() != null || operation.IsOneWay)
                 {
-                    // no need to add preflight operation for GET requests
-                    continue;
-                }
-
-                if (operation.IsOneWay)
-                {
-                    // no support for 1-way messages
+                    // no need to add preflight operation for GET requests, no support for 1-way messages
                     continue;
                 }
 
@@ -110,28 +104,35 @@ namespace CorsEnabledService
                 else
                 {
                     ContractDescription contract = operation.DeclaringContract;
-                    OperationDescription preflightOperation = new OperationDescription(operation.Name + CorsConstants.PreflightSuffix, contract);
-                    MessageDescription inputMessage = new MessageDescription(operation.Messages[0].Action + CorsConstants.PreflightSuffix, MessageDirection.Input);
-                    inputMessage.Body.Parts.Add(new MessagePartDescription("input", contract.Namespace) { Index = 0, Type = typeof(Message) });
-                    preflightOperation.Messages.Add(inputMessage);
-                    MessageDescription outputMessage = new MessageDescription(operation.Messages[1].Action + CorsConstants.PreflightSuffix, MessageDirection.Output);
-                    outputMessage.Body.ReturnValue = new MessagePartDescription(preflightOperation.Name + "Return", contract.Namespace) { Type = typeof(Message) };
-                    preflightOperation.Messages.Add(outputMessage);
-
-                    WebInvokeAttribute wia = new WebInvokeAttribute();
-                    wia.UriTemplate = originalUriTemplate;
-                    wia.Method = "OPTIONS";
-
-                    preflightOperation.Behaviors.Add(wia);
-                    preflightOperation.Behaviors.Add(new DataContractSerializerOperationBehavior(preflightOperation));
-                    PreflightOperationBehavior preflightOperationBehavior = new PreflightOperationBehavior(preflightOperation);
-                    preflightOperationBehavior.AddAllowedMethod(originalMethod);
-                    preflightOperation.Behaviors.Add(preflightOperationBehavior);
+                    OperationDescription preflightOperation;
+                    PreflightOperationBehavior preflightOperationBehavior;
+                    CreatePreflightOperation(operation, originalUriTemplate, originalMethod, contract, out preflightOperation, out preflightOperationBehavior);
                     uriTemplates.Add(originalUriTemplate, preflightOperationBehavior);
 
                     contract.Operations.Add(preflightOperation);
                 }
             }
+        }
+
+        private static void CreatePreflightOperation(OperationDescription operation, string originalUriTemplate, string originalMethod, ContractDescription contract, out OperationDescription preflightOperation, out PreflightOperationBehavior preflightOperationBehavior)
+        {
+            preflightOperation = new OperationDescription(operation.Name + CorsConstants.PreflightSuffix, contract);
+            MessageDescription inputMessage = new MessageDescription(operation.Messages[0].Action + CorsConstants.PreflightSuffix, MessageDirection.Input);
+            inputMessage.Body.Parts.Add(new MessagePartDescription("input", contract.Namespace) { Index = 0, Type = typeof(Message) });
+            preflightOperation.Messages.Add(inputMessage);
+            MessageDescription outputMessage = new MessageDescription(operation.Messages[1].Action + CorsConstants.PreflightSuffix, MessageDirection.Output);
+            outputMessage.Body.ReturnValue = new MessagePartDescription(preflightOperation.Name + "Return", contract.Namespace) { Type = typeof(Message) };
+            preflightOperation.Messages.Add(outputMessage);
+
+            WebInvokeAttribute wia = new WebInvokeAttribute();
+            wia.UriTemplate = originalUriTemplate;
+            wia.Method = "OPTIONS";
+
+            preflightOperation.Behaviors.Add(wia);
+            preflightOperation.Behaviors.Add(new DataContractSerializerOperationBehavior(preflightOperation));
+            preflightOperationBehavior = new PreflightOperationBehavior(preflightOperation);
+            preflightOperationBehavior.AddAllowedMethod(originalMethod);
+            preflightOperation.Behaviors.Add(preflightOperationBehavior);
         }
 
         private string NormalizeTemplate(string uriTemplate)
