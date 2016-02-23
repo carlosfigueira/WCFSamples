@@ -36,7 +36,8 @@ namespace GZipEncoderAndAutoFormatSelection
         {
             ServiceHost host = new ServiceHost(typeof(Service), new Uri(BaseAddress));
             ServiceEndpoint ep = host.AddServiceEndpoint(typeof(ITest), GetBinding(), "");
-            ep.Behaviors.Add(new WebHttpBehavior { HelpEnabled = true, AutomaticFormatSelectionEnabled = true });
+            ep.EndpointBehaviors.Add(new WebHttpBehavior { HelpEnabled = true, AutomaticFormatSelectionEnabled = true });
+            ep.EndpointBehaviors.Add(new CompressionAndFormatSelectionEndpointBehavior());
             host.Open();
             Console.WriteLine("Host opened");
 
