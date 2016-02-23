@@ -41,10 +41,10 @@ namespace GZipEncoderAndAutoFormatSelection
             Console.WriteLine("Host opened");
 
             string objectJson1 = "{'Name':'Scooby Doo', 'Description':'A dog', 'UID':123}".Replace('\'', '\"');
-            CallService("POST", "application/json", objectJson1, "application/json");
+            CallService("POST", "application/json", objectJson1, "application/json", true);
 
             string objectJson2 = "{'Name':'Shaggy', 'Description':'Best friend', 'UID':234}".Replace('\'', '\"');
-            CallService("POST", "application/json", objectJson2, "text/xml");
+            CallService("POST", "application/json", objectJson2, "text/xml", true);
 
             string objectXML1 = @"
         <DataObject>
@@ -52,17 +52,17 @@ namespace GZipEncoderAndAutoFormatSelection
             <Name>Velma</Name>
             <UID>345</UID>
         </DataObject>";
-            CallService("POST", "text/xml", objectXML1, "text/xml");
+            CallService("POST", "text/xml", objectXML1, "text/xml", true);
 
-            CallService("GET", null, null, "application/json");
-            CallService("GET", null, null, "text/xml");
+            CallService("GET", null, null, "application/json", false);
+            CallService("GET", null, null, "text/xml", false);
 
             Console.Write("Press ENTER to close the host");
             Console.ReadLine();
             host.Close();
         }
 
-        static void CallService(string method, string contentType, string content, string accept)
+        static void CallService(string method, string contentType, string content, string accept, bool compressRequest)
         {
             HttpWebRequest req = HttpWebRequest.CreateHttp(BaseAddress + "/Objects");
             req.Method = method;
@@ -82,6 +82,11 @@ namespace GZipEncoderAndAutoFormatSelection
             if (content != null)
             {
                 Stream reqStream = req.GetRequestStream();
+                if (compressRequest)
+                {
+                    reqStream = new GZipStream(reqStream, CompressionMode.Compress, false);
+                }
+
                 byte[] contentBytes = Encoding.UTF8.GetBytes(content);
                 reqStream.Write(contentBytes, 0, contentBytes.Length);
                 reqStream.Close();

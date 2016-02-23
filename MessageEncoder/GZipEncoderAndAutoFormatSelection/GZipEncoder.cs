@@ -14,10 +14,6 @@ namespace GZipEncoderAndAutoFormatSelection
         //We will use an inner binding element to store information required for the inner encoder
         MessageEncodingBindingElement innerBindingElement;
 
-        //By default, use the default text encoder as the inner encoder
-        public GZipMessageEncodingBindingElement()
-            : this(new TextMessageEncodingBindingElement()) { }
-
         public GZipMessageEncodingBindingElement(MessageEncodingBindingElement messageEncoderBindingElement)
         {
             this.innerBindingElement = messageEncoderBindingElement;
@@ -111,18 +107,10 @@ namespace GZipEncoderAndAutoFormatSelection
             get { return encoder.MessageVersion; }
         }
 
-        //This is the actual GZip encoder
         class GZipMessageEncoder : MessageEncoder
         {
-            static string GZipContentType = "application/x-gzip";
-
-            //This implementation wraps an inner encoder that actually converts a WCF Message
-            //into textual XML, binary XML or some other format. This implementation then compresses the results.
-            //The opposite happens when reading messages.
-            //This member stores this inner encoder.
             MessageEncoder innerEncoder;
 
-            //We require an inner encoder to be supplied (see comment above)
             internal GZipMessageEncoder(MessageEncoder messageEncoder)
                 : base()
             {
@@ -133,15 +121,24 @@ namespace GZipEncoderAndAutoFormatSelection
 
             public override string ContentType
             {
-                get { return GZipContentType; }
+                get { return innerEncoder.ContentType; }
             }
 
             public override string MediaType
             {
-                get { return GZipContentType; }
+                get { return innerEncoder.MediaType; }
             }
 
-            //SOAP version to use - we delegate to the inner encoder for this
+            public override bool IsContentTypeSupported(string contentType)
+            {
+                return innerEncoder.IsContentTypeSupported(contentType);
+            }
+
+            public override T GetProperty<T>()
+            {
+                return innerEncoder.GetProperty<T>();
+            }
+
             public override MessageVersion MessageVersion
             {
                 get { return innerEncoder.MessageVersion; }
@@ -207,7 +204,7 @@ namespace GZipEncoderAndAutoFormatSelection
                 //Decompress the buffer
                 ArraySegment<byte> decompressedBuffer = DecompressBuffer(buffer, bufferManager);
                 //Use the inner encoder to decode the decompressed buffer
-                Message returnMessage = innerEncoder.ReadMessage(decompressedBuffer, bufferManager);
+                Message returnMessage = innerEncoder.ReadMessage(decompressedBuffer, bufferManager, contentType);
                 returnMessage.Properties.Encoder = this;
                 return returnMessage;
             }
@@ -227,7 +224,7 @@ namespace GZipEncoderAndAutoFormatSelection
                 //This will ensure that the inner stream gets closed when the message gets closed, which
                 //will ensure that resources are available for reuse/release.
                 GZipStream gzStream = new GZipStream(stream, CompressionMode.Decompress, false);
-                return innerEncoder.ReadMessage(gzStream, maxSizeOfHeaders);
+                return innerEncoder.ReadMessage(gzStream, maxSizeOfHeaders, contentType);
             }
 
             public override void WriteMessage(Message message, System.IO.Stream stream)
