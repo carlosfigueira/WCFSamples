@@ -44,7 +44,7 @@ namespace GZipEncoderAndAutoFormatSelection
             CallService("POST", "application/json", objectJson1, "application/json", true);
 
             string objectJson2 = "{'Name':'Shaggy', 'Description':'Best friend', 'UID':234}".Replace('\'', '\"');
-            CallService("POST", "application/json", objectJson2, "text/xml", true);
+            CallService("POST", "application/json", objectJson2, "text/xml", false);
 
             string objectXML1 = @"
         <DataObject>
@@ -52,7 +52,7 @@ namespace GZipEncoderAndAutoFormatSelection
             <Name>Velma</Name>
             <UID>345</UID>
         </DataObject>";
-            CallService("POST", "text/xml", objectXML1, "text/xml", true);
+            CallService("POST", "text/xml", objectXML1, "text/xml", false);
 
             CallService("GET", null, null, "application/json", false);
             CallService("GET", null, null, "text/xml", false);

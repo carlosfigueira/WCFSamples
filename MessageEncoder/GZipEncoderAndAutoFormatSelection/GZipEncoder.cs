@@ -201,8 +201,15 @@ namespace GZipEncoderAndAutoFormatSelection
             //One of the two main entry points into the encoder. Called by WCF to decode a buffered byte array into a Message.
             public override Message ReadMessage(ArraySegment<byte> buffer, BufferManager bufferManager, string contentType)
             {
-                //Decompress the buffer
-                ArraySegment<byte> decompressedBuffer = DecompressBuffer(buffer, bufferManager);
+                ArraySegment<byte> decompressedBuffer = buffer;
+
+                if (buffer.Count >= 3 && buffer.Array[buffer.Offset] == 0x1F &&
+                    buffer.Array[buffer.Offset + 1] == 0x8B && buffer.Array[buffer.Offset + 2] == 0x08)
+                {
+                    //Decompress the buffer
+                    decompressedBuffer = DecompressBuffer(buffer, bufferManager);
+                }
+
                 //Use the inner encoder to decode the decompressed buffer
                 Message returnMessage = innerEncoder.ReadMessage(decompressedBuffer, bufferManager, contentType);
                 returnMessage.Properties.Encoder = this;
@@ -218,26 +225,14 @@ namespace GZipEncoderAndAutoFormatSelection
                 return CompressBuffer(buffer, bufferManager, messageOffset);
             }
 
-            public override Message ReadMessage(System.IO.Stream stream, int maxSizeOfHeaders, string contentType)
+            public override Message ReadMessage(Stream stream, int maxSizeOfHeaders, string contentType)
             {
-                //Pass false for the "leaveOpen" parameter to the GZipStream constructor.
-                //This will ensure that the inner stream gets closed when the message gets closed, which
-                //will ensure that resources are available for reuse/release.
-                GZipStream gzStream = new GZipStream(stream, CompressionMode.Decompress, false);
-                return innerEncoder.ReadMessage(gzStream, maxSizeOfHeaders, contentType);
+                throw new NotSupportedException("Not supported in this sample");
             }
 
-            public override void WriteMessage(Message message, System.IO.Stream stream)
+            public override void WriteMessage(Message message, Stream stream)
             {
-                using (GZipStream gzStream = new GZipStream(stream, CompressionMode.Compress, true))
-                {
-                    innerEncoder.WriteMessage(message, gzStream);
-                }
-
-                // innerEncoder.WriteMessage(message, gzStream) depends on that it can flush data by flushing 
-                // the stream passed in, but the implementation of GZipStream.Flush will not flush underlying
-                // stream, so we need to flush here.
-                stream.Flush();
+                throw new NotSupportedException("Not supported in this sample");
             }
         }
     }
