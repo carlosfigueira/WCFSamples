@@ -35,6 +35,8 @@ namespace GZipEncoderAndAutoFormatSelection
 
         public object AfterReceiveRequest(ref Message request, IClientChannel channel, InstanceContext instanceContext)
         {
+            bool shouldCompressResponse = false;
+
             object propObj;
             if (request.Properties.TryGetValue(HttpRequestMessageProperty.Name, out propObj))
             {
@@ -51,13 +53,37 @@ namespace GZipEncoderAndAutoFormatSelection
                         WebOperationContext.Current.OutgoingResponse.Format = WebMessageFormat.Xml;
                     }
                 }
+
+                var acceptEncoding = prop.Headers[HttpRequestHeader.AcceptEncoding];
+                if (acceptEncoding != null && acceptEncoding.Contains("gzip"))
+                {
+                    shouldCompressResponse = true;
+                }
             }
 
-            return null;
+            return shouldCompressResponse;
         }
 
         public void BeforeSendReply(ref Message reply, object correlationState)
         {
+            var useGzip = (bool)correlationState;
+            if (useGzip)
+            {
+                // Add property to be used by encoder
+                HttpResponseMessageProperty resp;
+                object respObj;
+                if (!reply.Properties.TryGetValue(HttpResponseMessageProperty.Name, out respObj))
+                {
+                    resp = new HttpResponseMessageProperty();
+                    reply.Properties.Add(HttpResponseMessageProperty.Name, resp);
+                }
+                else
+                {
+                    resp = (HttpResponseMessageProperty)respObj;
+                }
+
+                resp.Headers[HttpResponseHeader.ContentEncoding] = "gzip";
+            }
         }
     }
 }

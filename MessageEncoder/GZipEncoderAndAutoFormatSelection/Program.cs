@@ -42,10 +42,10 @@ namespace GZipEncoderAndAutoFormatSelection
             Console.WriteLine("Host opened");
 
             string objectJson1 = "{'Name':'Scooby Doo', 'Description':'A dog', 'UID':123}".Replace('\'', '\"');
-            CallService("POST", "application/json", objectJson1, "application/json", true);
+            CallService("POST", "application/json", objectJson1, "application/json", true, false);
 
             string objectJson2 = "{'Name':'Shaggy', 'Description':'Best friend', 'UID':234}".Replace('\'', '\"');
-            CallService("POST", "application/json", objectJson2, "text/xml", false);
+            CallService("POST", "application/json", objectJson2, "text/xml", false, true);
 
             string objectXML1 = @"
         <DataObject>
@@ -53,17 +53,19 @@ namespace GZipEncoderAndAutoFormatSelection
             <Name>Velma</Name>
             <UID>345</UID>
         </DataObject>";
-            CallService("POST", "text/xml", objectXML1, "text/xml", false);
+            CallService("POST", "text/xml", objectXML1, "text/xml", false, false);
 
-            CallService("GET", null, null, "application/json", false);
-            CallService("GET", null, null, "text/xml", false);
+            CallService("GET", null, null, "application/json", false, false);
+            CallService("GET", null, null, "text/xml", false, false);
+            CallService("GET", null, null, "application/json", false, true);
+            CallService("GET", null, null, "text/xml", false, true);
 
             Console.Write("Press ENTER to close the host");
             Console.ReadLine();
             host.Close();
         }
 
-        static void CallService(string method, string contentType, string content, string accept, bool compressRequest)
+        static void CallService(string method, string contentType, string content, string accept, bool compressRequest, bool acceptGzip)
         {
             HttpWebRequest req = HttpWebRequest.CreateHttp(BaseAddress + "/Objects");
             req.Method = method;
@@ -78,6 +80,16 @@ namespace GZipEncoderAndAutoFormatSelection
             {
                 req.Accept = accept;
                 Console.WriteLine("Sending request with Accept: {0}", req.Accept);
+            }
+
+            if (acceptGzip)
+            {
+                Console.WriteLine("Sending Accept-Encoding: gzip");
+                req.Headers[HttpRequestHeader.AcceptEncoding] = "gzip";
+            }
+            else
+            {
+                Console.WriteLine("Not sending Accept-Encoding header");
             }
 
             if (content != null)
@@ -113,7 +125,7 @@ namespace GZipEncoderAndAutoFormatSelection
             resp.GetResponseStream().CopyTo(ms);
             string body;
             
-            bool gzipEncoding = true;
+            bool gzipEncoding = resp.Headers[HttpResponseHeader.ContentEncoding] == "gzip";
             if (gzipEncoding)
             {
                 using (GZipStream gzip = new GZipStream(ms, CompressionMode.Decompress))

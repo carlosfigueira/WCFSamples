@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.IO.Compression;
+using System.Net;
 using System.ServiceModel.Channels;
 using System.Xml;
 
@@ -221,8 +222,19 @@ namespace GZipEncoderAndAutoFormatSelection
             {
                 //Use the inner encoder to encode a Message into a buffered byte array
                 ArraySegment<byte> buffer = innerEncoder.WriteMessage(message, maxMessageSize, bufferManager, 0);
-                //Compress the resulting byte array
-                return CompressBuffer(buffer, bufferManager, messageOffset);
+
+                object respObj;
+                if (message.Properties.TryGetValue(HttpResponseMessageProperty.Name, out respObj))
+                {
+                    var resp = (HttpResponseMessageProperty)respObj;
+                    if (resp.Headers[HttpResponseHeader.ContentEncoding] == "gzip")
+                    {
+                        // Need to compress the message
+                        buffer = CompressBuffer(buffer, bufferManager, messageOffset);
+                    }
+                }
+
+                return buffer;
             }
 
             public override Message ReadMessage(Stream stream, int maxSizeOfHeaders, string contentType)
